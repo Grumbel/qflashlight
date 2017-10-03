@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # qflashlight - Simple Qt-based fullscreen flashlight
 # Copyright (C) 2017 Ingo Ruhnke <grumbel@gmail.com>
 #
@@ -19,11 +20,10 @@
 import argparse
 import sys
 import signal
-from PyQt5 import QtWidgets, QtCore, QtGui
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QColorDialog
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
 
 
 class FlashlightWidget(QWidget):
@@ -35,13 +35,13 @@ class FlashlightWidget(QWidget):
         self.setAutoFillBackground(True)
 
         self.color = Qt.black
-        self.mpos = QtCore.QPoint()
+        self.mpos = QPoint()
 
     def setColor(self, color):
         self.color = color
 
         pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, color)
+        pal.setColor(QPalette.Background, color)
         self.setPalette(pal)
 
     def mouseDoubleClickEvent(self, ev):
@@ -65,10 +65,12 @@ class FlashlightWidget(QWidget):
         self.setWindowState(oldstate & ~Qt.WindowFullScreen)
 
         tmpcolor = self.color
+
         def setColor(color):
             nonlocal tmpcolor
             self.setColor(color)
             tmpcolor = None
+
         color_dlg = QColorDialog()
         color_dlg.setCurrentColor(self.color)
         color_dlg.currentColorChanged.connect(self.setColor)
@@ -87,11 +89,12 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
 
+
 def fullscreenn_flashlight(color, window):
     # allow Ctrl-C to close the app
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     w = FlashlightWidget()
     if not window:
         w.showFullScreen()
@@ -112,7 +115,7 @@ def parse_args(args):
 
 def main(argv):
     args = parse_args(argv[1:])
-    color = QtGui.QColor(args.color)
+    color = QColor(args.color)
     if not color.isValid():
         raise Exception("invalid color name")
 
