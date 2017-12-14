@@ -37,6 +37,8 @@ class FlashlightWidget(QWidget):
         self.color = Qt.black
         self.mpos = QPoint()
 
+        self.cursor_visible = True
+
     def setColor(self, color):
         self.color = color
 
@@ -86,6 +88,17 @@ class FlashlightWidget(QWidget):
     def keyPressEvent(self, ev):
         if ev.key() == Qt.Key_Escape:
             self.close()
+        elif ev.key() == Qt.Key_Q:
+            self.close()
+        elif ev.key() == Qt.Key_F:
+            self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
+        elif ev.key() == Qt.Key_M:
+            if self.cursor_visible:
+                self.setCursor(Qt.BlankCursor)
+                self.cursor_visible = False
+            else:
+                self.unsetCursor()
+                self.cursor_visible = True
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
 
