@@ -94,23 +94,31 @@ class FlashlightWidget(QWidget):
             self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
         elif ev.key() == Qt.Key_M:
             if self.cursor_visible:
-                self.setCursor(Qt.BlankCursor)
-                self.cursor_visible = False
+                self.hide_cursor()
             else:
-                self.unsetCursor()
-                self.cursor_visible = True
+                self.show_cursor()
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
 
+    def hide_cursor(self):
+        self.setCursor(Qt.BlankCursor)
+        self.cursor_visible = False
 
-def fullscreenn_flashlight(color, window):
+    def show_cursor(self):
+        self.unsetCursor()
+        self.cursor_visible = True
+
+
+def fullscreenn_flashlight(color, args):
     # allow Ctrl-C to close the app
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = QApplication(sys.argv)
     w = FlashlightWidget()
-    if not window:
+    if not args.window:
         w.showFullScreen()
+    if args.hide_cursor:
+        w.hide_cursor()
     w.setColor(color)
     w.show()
     sys.exit(app.exec_())
@@ -123,6 +131,8 @@ def parse_args(args):
                         help="Color to use for the background (#FFF, #FFFFFF or name)")
     parser.add_argument("-w", "--window", action="store_true", default=False,
                         help="Start in window mode")
+    parser.add_argument("-m", "--hide-cursor", action="store_true", default=False,
+                        help="Hide the mouse cursor")
     return parser.parse_args(args)
 
 
@@ -132,7 +142,7 @@ def main(argv):
     if not color.isValid():
         raise Exception("invalid color name")
 
-    fullscreenn_flashlight(color, args.window)
+    fullscreenn_flashlight(color, args)
 
 
 def main_entrypoint():
