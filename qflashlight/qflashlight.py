@@ -38,6 +38,7 @@ class FlashlightWidget(QWidget):
         self.mpos = QPoint()
 
         self.cursor_visible = True
+        self._borderless = False
 
     def setColor(self, color):
         self.color = color
@@ -99,6 +100,15 @@ class FlashlightWidget(QWidget):
                 self.show_cursor()
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
+        elif ev.key() == Qt.Key_B:
+            if self._borderless:
+                self.setWindowFlags(Qt.Window)
+                self.show()
+                self._borderless = False
+            else:
+                self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+                self.show()
+                self._borderless = True
 
     def hide_cursor(self):
         self.setCursor(Qt.BlankCursor)
