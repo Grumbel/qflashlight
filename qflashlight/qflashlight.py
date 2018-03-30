@@ -17,11 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import re
 import argparse
 import sys
 import signal
 
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
 
@@ -101,14 +102,17 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
         elif ev.key() == Qt.Key_B:
-            if self._borderless:
-                self.setWindowFlags(Qt.Window)
-                self.show()
-                self._borderless = False
-            else:
-                self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-                self.show()
-                self._borderless = True
+            self.set_borderless(not self._borderless)
+
+    def set_borderless(self, borderless: bool):
+        if borderless:
+            self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+            self.show()
+            self._borderless = False
+        else:
+            self.setWindowFlags(Qt.Window)
+            self.show()
+            self._borderless = True
 
     def hide_cursor(self):
         self.setCursor(Qt.BlankCursor)
@@ -130,8 +134,22 @@ def fullscreenn_flashlight(color, args):
     if args.hide_cursor:
         w.hide_cursor()
     w.setColor(color)
+    w.set_borderless(args.borderless)
+    if args.geometry is not None:
+        w.setGeometry(args.geometry)
     w.show()
     sys.exit(app.exec_())
+
+
+def str2qrect(text: str):
+    m = re.match(r'^(\d+)x(\d+)\+(\d+)\+(\d+)$', text)
+    if not m:
+        raise Exception("error: couldn't parse geometry (WxH+X+Y): {}".format(text))
+    else:
+        return QRect(int(m.group(3)),
+                     int(m.group(4)),
+                     int(m.group(1)),
+                     int(m.group(2)))
 
 
 def parse_args(args):
@@ -143,6 +161,10 @@ def parse_args(args):
                         help="Start in window mode")
     parser.add_argument("-m", "--hide-cursor", action="store_true", default=False,
                         help="Hide the mouse cursor")
+    parser.add_argument("-b", "--borderless", action="store_true", default=False,
+                        help="Run the window without a border")
+    parser.add_argument("-g", "--geometry", metavar="WxH+X+Y", type=str2qrect, default=None,
+                        help="Set the size and position of the window")
     return parser.parse_args(args)
 
 
