@@ -16,12 +16,23 @@
 
 SOURCES := $(wildcard qflashlight/*.py)
 
-default: flake # test
+default: flake mypy # test
 
 all: autopep flake test pylint
 
 autopep:
 	autopep8 --max-line=120 --in-place --aggressive $(SOURCES)
+
+mypy:
+	mypy \
+        --incremental \
+	--ignore-missing-imports \
+	--follow-imports skip \
+	--warn-return-any \
+	--warn-unused-ignores \
+	--warn-incomplete-stub \
+	--warn-redundant-casts \
+	$(SOURCES)
 
 test:
 	python3 -m unittest discover -s tests/
