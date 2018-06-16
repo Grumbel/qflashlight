@@ -1,3 +1,4 @@
 *~
 *.pyc
 /qflashlight.egg-info/
+/.mypy_cache/
