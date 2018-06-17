@@ -22,6 +22,10 @@ from setuptools import setup, find_packages
 
 setup(name='qflashlight',
       version='0.1.0',
+      description='Simple Qt-based fullscreen flashlight',
+      author='Ingo Ruhnke',
+      author_email='grumbel@gmail.com',
+      url='https://gitlab.com/Grumbel/qflashlight',
       scripts=[],
       entry_points={
           'console_scripts': [],
