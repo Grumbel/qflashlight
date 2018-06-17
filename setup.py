@@ -29,7 +29,12 @@ setup(name='qflashlight',
               'qflashlight = qflashlight.qflashlight:main_entrypoint',
           ]
           },
-      packages=['qflashlight'])
+      packages=['qflashlight'],
+      data_files=[
+          ('share/icons/hicolor/scalable/apps', ['data/qflashlight.svg']),
+          ('share/applications', ['qflashlight.desktop'])
+      ],
+)
 
 
 # EOF #

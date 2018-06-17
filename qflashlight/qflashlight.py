@@ -23,7 +23,7 @@ import sys
 import signal
 
 from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtGui import QColor, QPalette, QIcon
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
 
 
@@ -40,6 +40,8 @@ class FlashlightWidget(QWidget):
 
         self.cursor_visible = True
         self._borderless = False
+
+        self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
     def setColor(self, color):
         self.color = color
