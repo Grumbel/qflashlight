@@ -24,7 +24,7 @@ import signal
 
 from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QColor, QPalette, QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 
 class FlashlightWidget(QWidget):
@@ -63,6 +63,20 @@ class FlashlightWidget(QWidget):
             newpos = self.pos() + diff
             self.move(newpos)
 
+    def contextMenuEvent(self, ev: 'QContextMenuEvent'):
+        menu = QMenu()
+
+        if self.is_fullscreen():
+            menu.addAction("Exit full screen", lambda: self.toggle_fullscreen())
+        else:
+            menu.addAction("Enter full screen", lambda: self.toggle_fullscreen())
+
+        menu.addAction("Change Color...", lambda: self.showColorDialog())
+
+        menu.addSeparator()
+        menu.addAction("Exit", lambda: self.close())
+        menu.exec(ev.globalPos())
+
     def showColorDialog(self):
         # leave fullscreen mode while the color selector is displayed
         # to prevent the color selector falling behind the fullscreen
@@ -89,13 +103,19 @@ class FlashlightWidget(QWidget):
 
         self.setWindowState(oldstate)
 
+    def toggle_fullscreen(self):
+        self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
+
+    def is_fullscreen(self) -> bool:
+        return self.windowState() & Qt.WindowFullScreen
+
     def keyPressEvent(self, ev):
         if ev.key() == Qt.Key_Escape:
             self.close()
         elif ev.key() == Qt.Key_Q:
             self.close()
         elif ev.key() == Qt.Key_F:
-            self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
+            self.toggle_fullscreen()
         elif ev.key() == Qt.Key_M:
             if self.cursor_visible:
                 self.hide_cursor()
