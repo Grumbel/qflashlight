@@ -78,30 +78,26 @@ class FlashlightWidget(QWidget):
         menu.exec(ev.globalPos())
 
     def showColorDialog(self):
-        # leave fullscreen mode while the color selector is displayed
-        # to prevent the color selector falling behind the fullscreen
-        # window and the app being unclosable
-        oldstate = self.windowState()
-        self.setWindowState(oldstate & ~Qt.WindowFullScreen)
-
         tmpcolor = self.color
 
-        def setColor(color):
+        def set_color(color):
             nonlocal tmpcolor
             self.setColor(color)
             tmpcolor = None
 
-        color_dlg = QColorDialog()
-        color_dlg.setCurrentColor(self.color)
-        color_dlg.currentColorChanged.connect(self.setColor)
-        color_dlg.colorSelected.connect(setColor)
-        flags = self.windowFlags()
-        color_dlg.setWindowFlags(flags | Qt.WindowStaysOnTopHint)
-        color_dlg.exec_()
-        if tmpcolor is not None:
-            self.setColor(tmpcolor)
+        def restore_color():
+            if tmpcolor is not None:
+                self.setColor(tmpcolor)
 
-        self.setWindowState(oldstate)
+        color_dlg = QColorDialog(self)
+        color_dlg.setWindowModality(Qt.WindowModal)
+        color_dlg.setCurrentColor(self.color)
+
+        color_dlg.currentColorChanged.connect(self.setColor)
+        color_dlg.colorSelected.connect(set_color)
+        color_dlg.rejected.connect(restore_color)
+
+        color_dlg.show()
 
     def toggle_fullscreen(self):
         self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
