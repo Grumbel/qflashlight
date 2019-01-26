@@ -17,10 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import re
 import argparse
-import sys
+import logging
+import re
 import signal
+import sys
 
 from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent
@@ -38,21 +39,14 @@ class FlashlightWidget(QWidget):
         self.color = Qt.black
         self.mpos = QPoint()
 
-        self.cursor_visible = True
+        self._cursor_visible = True
         self._borderless = False
+        self._fullscreen = False
 
         self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
-    def setColor(self, color):
-        self.color = color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Background, color)
-        self.setPalette(pal)
-
     def mouseDoubleClickEvent(self, ev):
-        state = self.windowState()
-        self.setWindowState(state ^ Qt.WindowFullScreen)
+        self.set_fullscreen(not self._fullscreen)
 
     def mousePressEvent(self, ev):
         self.mpos = ev.pos()
@@ -66,10 +60,20 @@ class FlashlightWidget(QWidget):
     def contextMenuEvent(self, ev: QContextMenuEvent):
         menu = QMenu()
 
-        if self.is_fullscreen():
-            menu.addAction("Exit full screen", lambda: self.toggle_fullscreen())
+        if self._fullscreen:
+            menu.addAction("Exit full screen", lambda: self.set_fullscreen(False))
         else:
-            menu.addAction("Enter full screen", lambda: self.toggle_fullscreen())
+            menu.addAction("Enter full screen", lambda: self.set_fullscreen(True))
+
+        if self._cursor_visible:
+            menu.addAction("Hide mouse cursor", lambda: self.hide_cursor())
+        else:
+            menu.addAction("Show mouse cursor", lambda: self.show_cursor())
+
+        if self._borderless:
+            menu.addAction("Show window border", lambda: self.set_borderless(False))
+        else:
+            menu.addAction("Hide window border", lambda: self.set_borderless(True))
 
         menu.addAction("Change Color...", lambda: self.showColorDialog())
 
@@ -99,12 +103,6 @@ class FlashlightWidget(QWidget):
 
         color_dlg.show()
 
-    def toggle_fullscreen(self) -> None:
-        self.setWindowState(self.windowState() ^ Qt.WindowFullScreen)
-
-    def is_fullscreen(self) -> bool:
-        return bool(self.windowState() & Qt.WindowFullScreen)
-
     def keyPressEvent(self, ev):
         if ev.key() == Qt.Key_Escape:
             self.close()
@@ -113,7 +111,7 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_F:
             self.toggle_fullscreen()
         elif ev.key() == Qt.Key_M:
-            if self.cursor_visible:
+            if self._cursor_visible:
                 self.hide_cursor()
             else:
                 self.show_cursor()
@@ -122,23 +120,38 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
+    def setColor(self, color):
+        self.color = color
+
+        pal = self.palette()
+        pal.setColor(QPalette.Background, color)
+        self.setPalette(pal)
+
+    def set_fullscreen(self, fullscreen: bool) -> None:
+        self._fullscreen = fullscreen
+
+        if self._fullscreen:
+            self.setWindowState(self.windowState() | Qt.WindowFullScreen)
+        else:
+            self.setWindowState(self.windowState() & ~Qt.WindowFullScreen)
+
     def set_borderless(self, borderless: bool):
-        if borderless:
+        self._borderless = borderless
+
+        if self._borderless:
             self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
             self.show()
-            self._borderless = False
         else:
-            self.setWindowFlags(Qt.Window)
+            self.setWindowFlags(self.windowFlags() & ~Qt.FramelessWindowHint)
             self.show()
-            self._borderless = True
 
     def hide_cursor(self):
         self.setCursor(Qt.BlankCursor)
-        self.cursor_visible = False
+        self._cursor_visible = False
 
     def show_cursor(self):
         self.unsetCursor()
-        self.cursor_visible = True
+        self._cursor_visible = True
 
 
 def fullscreenn_flashlight(color, args):
@@ -148,7 +161,7 @@ def fullscreenn_flashlight(color, args):
     app = QApplication(sys.argv)
     w = FlashlightWidget()
     if not args.window:
-        w.showFullScreen()
+        w.set_fullscreen(True)
     if args.hide_cursor:
         w.hide_cursor()
     w.setColor(color)
