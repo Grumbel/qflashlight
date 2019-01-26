@@ -23,8 +23,8 @@ import sys
 import signal
 
 from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtGui import QColor, QPalette, QIcon
-from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu, QContextMenuEvent
+from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent
+from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 
 class FlashlightWidget(QWidget):
