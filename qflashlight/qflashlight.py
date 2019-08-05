@@ -24,7 +24,7 @@ import signal
 import sys
 
 from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent
+from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFontMetrics
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 
@@ -36,7 +36,9 @@ class FlashlightWidget(QWidget):
         self.setWindowTitle("QFlashlight")
         self.setAutoFillBackground(True)
 
+        self.text = None
         self.color = Qt.black
+        self.text_color = Qt.white
         self.mpos = QPoint()
 
         self._cursor_visible = True
@@ -127,6 +129,16 @@ class FlashlightWidget(QWidget):
         pal.setColor(QPalette.Background, color)
         self.setPalette(pal)
 
+    def setTextColor(self, color):
+        self.text_color = color
+
+        pal = self.palette()
+        pal.setColor(QPalette.Foreground, color)
+        self.setPalette(pal)
+
+    def setText(self, text):
+        self.text = text
+
     def set_fullscreen(self, fullscreen: bool) -> None:
         self._fullscreen = fullscreen
 
@@ -153,8 +165,20 @@ class FlashlightWidget(QWidget):
         self.unsetCursor()
         self._cursor_visible = True
 
+    def paintEvent(self, ev):
+        if self.text is not None:
+            painter = QPainter(self)
+            font = painter.font()
+            fm = QFontMetrics(font)
+            rect = fm.boundingRect(self.text)
+            sx = self.width() / rect.width()
+            sy = sx  # self.height() / rect.height()
+            painter.scale(sx, sy)
+            painter.drawText(QRect(0, 0, self.width() / sx, self.height() / sy),
+                             Qt.AlignCenter, self.text)
 
-def fullscreenn_flashlight(color, args):
+
+def fullscreen_flashlight(color, text_color, args):
     # allow Ctrl-C to close the app
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -165,6 +189,8 @@ def fullscreenn_flashlight(color, args):
     if args.hide_cursor:
         w.hide_cursor()
     w.setColor(color)
+    w.setTextColor(text_color)
+    w.setText(args.text)
     w.set_borderless(args.borderless)
     if args.geometry is not None:
         w.setGeometry(args.geometry)
@@ -188,6 +214,10 @@ def parse_args(args):
     parser.add_argument("FILE", nargs='*')
     parser.add_argument("-c", "--color", metavar="COLOR", type=str, default=Qt.black,
                         help="Color to use for the background (#FFF, #FFFFFF or name)")
+    parser.add_argument("-T", "--text-color", metavar="COLOR", type=str, default=Qt.white,
+                        help="Color to use for text")
+    parser.add_argument("-t", "--text", metavar="TEXT", type=str, default=None,
+                        help="Display text")
     parser.add_argument("-w", "--window", action="store_true", default=False,
                         help="Start in window mode")
     parser.add_argument("-m", "--hide-cursor", action="store_true", default=False,
@@ -201,11 +231,16 @@ def parse_args(args):
 
 def main(argv):
     args = parse_args(argv[1:])
+
     color = QColor(args.color)
     if not color.isValid():
         raise Exception("invalid color name")
 
-    fullscreenn_flashlight(color, args)
+    text_color = QColor(args.text_color)
+    if not text_color.isValid():
+        raise Exception("invalid text color name")
+
+    fullscreen_flashlight(color, text_color, args)
 
 
 def main_entrypoint():
