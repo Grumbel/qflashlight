@@ -23,7 +23,7 @@ import re
 import signal
 import sys
 
-from PyQt5.QtCore import Qt, QPoint, QRect
+from PyQt5.QtCore import Qt, QPoint, QRect, QRectF
 from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFontMetrics
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
@@ -167,15 +167,26 @@ class FlashlightWidget(QWidget):
 
     def paintEvent(self, ev):
         if self.text is not None:
+            # text = f" {self.text} "
+            text = self.text
             painter = QPainter(self)
             font = painter.font()
             fm = QFontMetrics(font)
-            rect = fm.boundingRect(self.text)
-            sx = self.width() / rect.width()
-            sy = sx  # self.height() / rect.height()
+            rect = fm.size(Qt.AlignCenter, text)
+
+            src_aspect = rect.width() / rect.height()
+            dst_aspect = self.width() / self.height()
+
+            if src_aspect > dst_aspect:
+                sx = self.width() / rect.width()
+                sy = sx
+            else:
+                sy = self.height() / rect.height()
+                sx = sy
+
             painter.scale(sx, sy)
-            painter.drawText(QRect(0, 0, self.width() / sx, self.height() / sy),
-                             Qt.AlignCenter, self.text)
+            painter.drawText(QRectF(0, 0, self.width() / sx, self.height() / sy),
+                             Qt.AlignCenter, text)
 
 
 def fullscreen_flashlight(color, text_color, args):
