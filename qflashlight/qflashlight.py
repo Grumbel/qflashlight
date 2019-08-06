@@ -111,7 +111,7 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_Q:
             self.close()
         elif ev.key() == Qt.Key_F:
-            self.toggle_fullscreen()
+            self.set_fullscreen(not self._fullscreen)
         elif ev.key() == Qt.Key_M:
             if self._cursor_visible:
                 self.hide_cursor()
