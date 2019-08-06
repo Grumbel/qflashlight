@@ -78,28 +78,35 @@ class FlashlightWidget(QWidget):
             menu.addAction("Hide window border", lambda: self.set_borderless(True))
 
         menu.addAction("Change Color...", lambda: self.showColorDialog())
+        menu.addAction("Change Text Color...", lambda: self.showTextColorDialog())
 
         menu.addSeparator()
         menu.addAction("Exit", lambda: self.close())
         menu.exec(ev.globalPos())
 
+    def showTextColorDialog(self):
+        self._showColorDialog(lambda: self.text_color, self.setTextColor)
+
     def showColorDialog(self):
-        tmpcolor = self.color
+        self._showColorDialog(lambda: self.color, self.setColor)
+
+    def _showColorDialog(self, getter, setter):
+        tmpcolor = getter()
 
         def set_color(color):
             nonlocal tmpcolor
-            self.setColor(color)
+            setter(color)
             tmpcolor = None
 
         def restore_color():
             if tmpcolor is not None:
-                self.setColor(tmpcolor)
+                setter(tmpcolor)
 
         color_dlg = QColorDialog(self)
         color_dlg.setWindowModality(Qt.WindowModal)
-        color_dlg.setCurrentColor(self.color)
+        color_dlg.setCurrentColor(getter())
 
-        color_dlg.currentColorChanged.connect(self.setColor)
+        color_dlg.currentColorChanged.connect(setter)
         color_dlg.colorSelected.connect(set_color)
         color_dlg.rejected.connect(restore_color)
 
@@ -119,6 +126,8 @@ class FlashlightWidget(QWidget):
                 self.show_cursor()
         elif ev.key() == Qt.Key_C:
             self.showColorDialog()
+        elif ev.key() == Qt.Key_T:
+            self.showTextColorDialog()
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
