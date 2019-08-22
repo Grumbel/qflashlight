@@ -20,11 +20,14 @@
 import argparse
 import re
 import signal
+import subprocess
 import sys
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QRectF
 from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFontMetrics
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
+
+from typing import Optional
 
 
 class FlashlightWidget(QWidget):
@@ -144,8 +147,28 @@ class FlashlightWidget(QWidget):
         pal.setColor(QPalette.Foreground, self.fg_color)
         self.setPalette(pal)
 
-    def setText(self, text):
+    def setText(self, text: str):
         self.text = text
+
+    def setCommand(self, command: str):
+        self.command = command
+        self._update_text_from_command()
+
+    def setRefreshInterval(self, interval: Optional[float]):
+        self.refresh_interval = interval
+
+        if self.refresh_interval is not None:
+            self.startTimer(self.refresh_interval * 1000.0)
+
+    def timerEvent(self, ev):
+        self._update_text_from_command()
+
+    def _update_text_from_command(self):
+        if self.command is None:
+            return
+
+        self.text = subprocess.getoutput(self.command)
+        self.update()
 
     def set_fullscreen(self, fullscreen: bool) -> None:
         self._fullscreen = fullscreen
@@ -209,7 +232,9 @@ def fullscreen_flashlight(bg_color: 'QColor', fg_color: 'QColor', args):
         w.hide_cursor()
     w.setBackgroundColor(bg_color)
     w.setForegroundColor(fg_color)
+    w.setRefreshInterval(args.interval)
     w.setText(args.text)
+    w.setCommand(args.command)
     w.set_borderless(args.borderless)
     if args.geometry is not None:
         w.setGeometry(args.geometry)
@@ -237,6 +262,10 @@ def parse_args(args):
                         help="Color to use for text")
     parser.add_argument("-t", "--text", metavar="TEXT", type=str, default=None,
                         help="Display text")
+    parser.add_argument("-C", "--command", metavar="CMD", type=str, default=None,
+                        help="Runs CMD and shows the output")
+    parser.add_argument("-n", "--interval", metavar="SECONDS", type=float, default=None,
+                        help="Refresh the screen and rerun command every SECONDS seconds (default: None)")
     parser.add_argument("-w", "--window", action="store_true", default=False,
                         help="Start in window mode")
     parser.add_argument("-m", "--hide-cursor", action="store_true", default=False,
