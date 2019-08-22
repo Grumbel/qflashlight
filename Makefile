@@ -16,7 +16,7 @@
 
 SOURCES := $(wildcard qflashlight/*.py)
 
-default: flake mypy # test
+default: flake mypy pylint  # test
 
 all: autopep flake test pylint
 
