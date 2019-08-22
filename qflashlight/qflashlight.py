@@ -32,14 +32,15 @@ from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 class FlashlightWidget(QWidget):
 
-    def __init__(self, *args):
+    def __init__(self, *args) -> None:
         super().__init__(*args)
 
-        self._text = None
-        self._bg_color = Qt.black
-        self._fg_color = Qt.white
-        self._command = None
-        self._refresh_interval = None
+        self._bg_color: QColor = Qt.black
+        self._fg_color: QColor = Qt.white
+
+        self._text: Optional[str] = None
+        self._command: Optional[str] = None
+        self._refresh_interval: Optional[float] = None
 
         self._mpos = QPoint()
 
@@ -52,19 +53,19 @@ class FlashlightWidget(QWidget):
 
         self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
-    def mouseDoubleClickEvent(self, ev):
+    def mouseDoubleClickEvent(self, ev) -> None:
         self.set_fullscreen(not self._fullscreen)
 
-    def mousePressEvent(self, ev):
+    def mousePressEvent(self, ev) -> None:
         self._mpos = ev.pos()
 
-    def mouseMoveEvent(self, ev):
+    def mouseMoveEvent(self, ev) -> None:
         if ev.buttons() & Qt.LeftButton:
             diff = ev.pos() - self._mpos
             newpos = self.pos() + diff
             self.move(newpos)
 
-    def contextMenuEvent(self, ev: QContextMenuEvent):
+    def contextMenuEvent(self, ev: QContextMenuEvent) -> None:
         menu = QMenu()
 
         if self._fullscreen:
@@ -95,7 +96,7 @@ class FlashlightWidget(QWidget):
     def show_color_dialog(self) -> None:
         self._show_color_dialog(lambda: self._bg_color, self.set_background_color)
 
-    def _show_color_dialog(self, getter, setter):
+    def _show_color_dialog(self, getter, setter) -> None:
         tmpcolor = getter()
 
         def set_color(color):
@@ -117,7 +118,7 @@ class FlashlightWidget(QWidget):
 
         color_dlg.show()
 
-    def keyPressEvent(self, ev):
+    def keyPressEvent(self, ev) -> None:
         if ev.key() == Qt.Key_Escape:
             self.close()
         elif ev.key() == Qt.Key_Q:
@@ -136,37 +137,37 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
-    def set_background_color(self, bg_color):
+    def set_background_color(self, bg_color) -> None:
         self._bg_color = bg_color
 
         pal = self.palette()
         pal.setColor(QPalette.Background, self._bg_color)
         self.setPalette(pal)
 
-    def set_foreground_color(self, fg_color: QColor):
+    def set_foreground_color(self, fg_color: QColor) -> None:
         self._fg_color = fg_color
 
         pal = self.palette()
         pal.setColor(QPalette.Foreground, self._fg_color)
         self.setPalette(pal)
 
-    def set_text(self, text: str):
+    def set_text(self, text: str) -> None:
         self._text = text
 
-    def set_command(self, command: str):
+    def set_command(self, command: str) -> None:
         self._command = command
         self._update_text_from_command()
 
-    def set_refresh_interval(self, interval: Optional[float]):
+    def set_refresh_interval(self, interval: Optional[float]) -> None:
         self._refresh_interval = interval
 
         if self._refresh_interval is not None:
             self.startTimer(self._refresh_interval * 1000.0)
 
-    def timerEvent(self, ev):
+    def timerEvent(self, ev) -> None:
         self._update_text_from_command()
 
-    def _update_text_from_command(self):
+    def _update_text_from_command(self) -> None:
         if self._command is None:
             return
 
@@ -181,7 +182,7 @@ class FlashlightWidget(QWidget):
         else:
             self.setWindowState(self.windowState() & ~Qt.WindowFullScreen)
 
-    def set_borderless(self, borderless: bool):
+    def set_borderless(self, borderless: bool) -> None:
         self._borderless = borderless
 
         if self._borderless:
@@ -191,15 +192,15 @@ class FlashlightWidget(QWidget):
             self.setWindowFlags(self.windowFlags() & ~Qt.FramelessWindowHint)
             self.show()
 
-    def hide_cursor(self):
+    def hide_cursor(self) -> None:
         self.setCursor(Qt.BlankCursor)
         self._cursor_visible = False
 
-    def show_cursor(self):
+    def show_cursor(self) -> None:
         self.unsetCursor()
         self._cursor_visible = True
 
-    def paintEvent(self, ev):
+    def paintEvent(self, ev) -> None:
         if self._text is not None:
             text = self._text
             painter = QPainter(self)
