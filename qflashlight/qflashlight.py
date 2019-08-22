@@ -23,11 +23,11 @@ import signal
 import subprocess
 import sys
 
+from typing import Optional
+
 from PyQt5.QtCore import Qt, QPoint, QRect, QRectF
 from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFontMetrics
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
-
-from typing import Optional
 
 
 class FlashlightWidget(QWidget):
@@ -35,17 +35,20 @@ class FlashlightWidget(QWidget):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.setWindowTitle("QFlashlight")
-        self.setAutoFillBackground(True)
+        self._text = None
+        self._bg_color = Qt.black
+        self._fg_color = Qt.white
+        self._command = None
+        self._refresh_interval = None
 
-        self.text = None
-        self.bg_color = Qt.black
-        self.fg_color = Qt.white
-        self.mpos = QPoint()
+        self._mpos = QPoint()
 
         self._cursor_visible = True
         self._borderless = False
         self._fullscreen = False
+
+        self.setWindowTitle("QFlashlight")
+        self.setAutoFillBackground(True)
 
         self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
@@ -53,11 +56,11 @@ class FlashlightWidget(QWidget):
         self.set_fullscreen(not self._fullscreen)
 
     def mousePressEvent(self, ev):
-        self.mpos = ev.pos()
+        self._mpos = ev.pos()
 
     def mouseMoveEvent(self, ev):
         if ev.buttons() & Qt.LeftButton:
-            diff = ev.pos() - self.mpos
+            diff = ev.pos() - self._mpos
             newpos = self.pos() + diff
             self.move(newpos)
 
@@ -79,20 +82,20 @@ class FlashlightWidget(QWidget):
         else:
             menu.addAction("Hide window border", lambda: self.set_borderless(True))
 
-        menu.addAction("Change Color...", lambda: self.showColorDialog())
-        menu.addAction("Change Text Color...", lambda: self.showTextColorDialog())
+        menu.addAction("Change Color...", lambda: self.show_color_dialog())
+        menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
 
         menu.addSeparator()
         menu.addAction("Exit", lambda: self.close())
         menu.exec(ev.globalPos())
 
-    def showTextColorDialog(self):
-        self._showColorDialog(lambda: self.fg_color, self.setTextColor)
+    def show_text_color_dialog(self) -> None:
+        self._show_color_dialog(lambda: self._fg_color, self.set_foreground_color)
 
-    def showColorDialog(self):
-        self._showColorDialog(lambda: self.color, self.setColor)
+    def show_color_dialog(self) -> None:
+        self._show_color_dialog(lambda: self._bg_color, self.set_background_color)
 
-    def _showColorDialog(self, getter, setter):
+    def _show_color_dialog(self, getter, setter):
         tmpcolor = getter()
 
         def set_color(color):
@@ -127,47 +130,47 @@ class FlashlightWidget(QWidget):
             else:
                 self.show_cursor()
         elif ev.key() == Qt.Key_C:
-            self.showColorDialog()
+            self.show_color_dialog()
         elif ev.key() == Qt.Key_T:
-            self.showTextColorDialog()
+            self.show_text_color_dialog()
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
-    def setBackgroundColor(self, bg_color):
-        self.bg_color = bg_color
+    def set_background_color(self, bg_color):
+        self._bg_color = bg_color
 
         pal = self.palette()
-        pal.setColor(QPalette.Background, self.bg_color)
+        pal.setColor(QPalette.Background, self._bg_color)
         self.setPalette(pal)
 
-    def setForegroundColor(self, fg_color: QColor):
-        self.fg_color = fg_color
+    def set_foreground_color(self, fg_color: QColor):
+        self._fg_color = fg_color
 
         pal = self.palette()
-        pal.setColor(QPalette.Foreground, self.fg_color)
+        pal.setColor(QPalette.Foreground, self._fg_color)
         self.setPalette(pal)
 
-    def setText(self, text: str):
-        self.text = text
+    def set_text(self, text: str):
+        self._text = text
 
-    def setCommand(self, command: str):
-        self.command = command
+    def set_command(self, command: str):
+        self._command = command
         self._update_text_from_command()
 
-    def setRefreshInterval(self, interval: Optional[float]):
-        self.refresh_interval = interval
+    def set_refresh_interval(self, interval: Optional[float]):
+        self._refresh_interval = interval
 
-        if self.refresh_interval is not None:
-            self.startTimer(self.refresh_interval * 1000.0)
+        if self._refresh_interval is not None:
+            self.startTimer(self._refresh_interval * 1000.0)
 
     def timerEvent(self, ev):
         self._update_text_from_command()
 
     def _update_text_from_command(self):
-        if self.command is None:
+        if self._command is None:
             return
 
-        self.text = subprocess.getoutput(self.command)
+        self._text = subprocess.getoutput(self._command)
         self.update()
 
     def set_fullscreen(self, fullscreen: bool) -> None:
@@ -197,9 +200,8 @@ class FlashlightWidget(QWidget):
         self._cursor_visible = True
 
     def paintEvent(self, ev):
-        if self.text is not None:
-            # text = f" {self.text} "
-            text = self.text
+        if self._text is not None:
+            text = self._text
             painter = QPainter(self)
             font = painter.font()
             fm = QFontMetrics(font)
@@ -230,11 +232,11 @@ def fullscreen_flashlight(bg_color: 'QColor', fg_color: 'QColor', args):
         w.set_fullscreen(True)
     if args.hide_cursor:
         w.hide_cursor()
-    w.setBackgroundColor(bg_color)
-    w.setForegroundColor(fg_color)
-    w.setRefreshInterval(args.interval)
-    w.setText(args.text)
-    w.setCommand(args.command)
+    w.set_background_color(bg_color)
+    w.set_foreground_color(fg_color)
+    w.set_refresh_interval(args.interval)
+    w.set_text(args.text)
+    w.set_command(args.command)
     w.set_borderless(args.borderless)
     if args.geometry is not None:
         w.setGeometry(args.geometry)
