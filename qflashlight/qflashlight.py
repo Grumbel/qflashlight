@@ -267,24 +267,31 @@ def str2qrect(text: str):
 def parse_args(args):
     parser = argparse.ArgumentParser(description="QFlashlight - Fill the screen with a solid color")
     parser.add_argument("FILE", nargs="?")
-    parser.add_argument("-c", "--color", metavar="COLOR", type=str, default=Qt.black,
-                        help="Color to use for the background (#FFF, #FFFFFF or name)")
-    parser.add_argument("-T", "--text-color", metavar="COLOR", type=str, default=Qt.white,
-                        help="Color to use for text")
-    parser.add_argument("-t", "--text", metavar="TEXT", type=str, default=None,
-                        help="Display text")
-    parser.add_argument("-C", "--command", metavar="CMD", type=str, default=None,
-                        help="Runs CMD and shows the output")
-    parser.add_argument("-n", "--interval", metavar="SECONDS", type=float, default=None,
-                        help="Refresh the screen and rerun command every SECONDS seconds (default: None)")
-    parser.add_argument("-w", "--window", action="store_true", default=False,
+
+    style = parser.add_argument_group("Style")
+    style.add_argument("-c", "--color", metavar="COLOR", type=QColorArgument, default=Qt.black,
+                       help="Color to use for the background (#FFF, #FFFFFF or name)")
+    style.add_argument("-T", "--text-color", metavar="COLOR", type=QColorArgument, default=Qt.white,
+                       help="Color to use for text")
+
+    content = parser.add_argument_group("Content")
+    content.add_argument("-t", "--text", metavar="TEXT", type=str, default=None,
+                         help="Display text")
+    content.add_argument("-C", "--command", metavar="CMD", type=str, default=None,
+                         help="Runs CMD and shows the output")
+    content.add_argument("-n", "--interval", metavar="SECONDS", type=float, default=None,
+                         help="Refresh the screen and rerun command every SECONDS seconds (default: None)")
+
+    window = parser.add_argument_group("Window")
+    window.add_argument("-w", "--window", action="store_true", default=False,
                         help="Start in window mode")
-    parser.add_argument("-m", "--hide-cursor", action="store_true", default=False,
+    window.add_argument("-m", "--hide-cursor", action="store_true", default=False,
                         help="Hide the mouse cursor")
-    parser.add_argument("-b", "--borderless", action="store_true", default=False,
+    window.add_argument("-b", "--borderless", action="store_true", default=False,
                         help="Run the window without a border")
-    parser.add_argument("-g", "--geometry", metavar="WxH+X+Y", type=str2qrect, default=None,
+    window.add_argument("-g", "--geometry", metavar="WxH+X+Y", type=QRectArgument, default=None,
                         help="Set the size and position of the window")
+
     return parser.parse_args(args)
 
 
