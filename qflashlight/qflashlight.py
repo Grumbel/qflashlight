@@ -236,7 +236,15 @@ def fullscreen_flashlight(bg_color: 'QColor', fg_color: 'QColor', args):
     w.set_background_color(bg_color)
     w.set_foreground_color(fg_color)
     w.set_refresh_interval(args.interval)
-    w.set_text(args.text)
+    if args.FILE is None:
+        w.set_text(args.text)
+    else:
+        if args.FILE[0] == "-":
+            text = sys.stdin.read()
+        else:
+            with open(args.FILE) as fin:
+                text = fin.read()
+        w.set_text(text.rstrip("\n"))
     w.set_command(args.command)
     w.set_borderless(args.borderless)
     if args.geometry is not None:
@@ -258,7 +266,7 @@ def str2qrect(text: str):
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description="QFlashlight - Fill the screen with a solid color")
-    parser.add_argument("FILE", nargs='*')
+    parser.add_argument("FILE", nargs="?")
     parser.add_argument("-c", "--color", metavar="COLOR", type=str, default=Qt.black,
                         help="Color to use for the background (#FFF, #FFFFFF or name)")
     parser.add_argument("-T", "--text-color", metavar="COLOR", type=str, default=Qt.white,
