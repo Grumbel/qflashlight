@@ -26,7 +26,7 @@ import sys
 from typing import Optional
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QRectF
-from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFontMetrics
+from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFont, QFontMetrics
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 
@@ -37,6 +37,7 @@ class FlashlightWidget(QWidget):
 
         self._bg_color: QColor = Qt.black
         self._fg_color: QColor = Qt.white
+        self._font: QFont = QFont()
 
         self._text: Optional[str] = None
         self._command: Optional[str] = None
@@ -151,6 +152,9 @@ class FlashlightWidget(QWidget):
         pal.setColor(QPalette.Foreground, self._fg_color)
         self.setPalette(pal)
 
+    def set_font(self, font: QFont) -> None:
+        self._font = font
+
     def set_text(self, text: str) -> None:
         self._text = text
 
@@ -204,8 +208,8 @@ class FlashlightWidget(QWidget):
         if self._text is not None:
             text = self._text
             painter = QPainter(self)
-            font = painter.font()
-            fm = QFontMetrics(font)
+            painter.setFont(self._font)
+            fm = QFontMetrics(painter.font())
             rect = fm.size(Qt.AlignCenter, text)
 
             src_aspect = rect.width() / rect.height()
@@ -245,6 +249,11 @@ def parse_args(args):
 
     QColor_from_string.__name__ = "QColor"
 
+    def QFont_from_string(text: str) -> QFont:
+        return QFont(text)
+
+    QFont_from_string.__name__ = "QFont"
+
     parser = argparse.ArgumentParser(description="QFlashlight - Fill the screen with a solid color")
     parser.add_argument("FILE", nargs="?")
 
@@ -253,6 +262,8 @@ def parse_args(args):
                        help="Color to use for the background (#FFF, #FFFFFF or name)")
     style.add_argument("-T", "--text-color", metavar="COLOR", type=QColor_from_string, default=Qt.white,
                        help="Color to use for text")
+    style.add_argument("-F", "--font", metavar="FONT", type=QFont_from_string, default=QFont(),
+                       help="Use FONT to display text")
 
     content = parser.add_argument_group("Content")
     content.add_argument("-t", "--text", metavar="TEXT", type=str, default=None,
@@ -288,6 +299,7 @@ def main(argv):
     # Style
     w.set_background_color(args.color)
     w.set_foreground_color(args.text_color)
+    w.set_font(args.font)
 
     # Content
     if args.FILE is None:
