@@ -223,55 +223,35 @@ class FlashlightWidget(QWidget):
                              Qt.AlignCenter, text)
 
 
-def fullscreen_flashlight(bg_color: 'QColor', fg_color: 'QColor', args):
-    # allow Ctrl-C to close the app
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    app = QApplication(sys.argv)
-    w = FlashlightWidget()
-    if not args.window:
-        w.set_fullscreen(True)
-    if args.hide_cursor:
-        w.hide_cursor()
-    w.set_background_color(bg_color)
-    w.set_foreground_color(fg_color)
-    w.set_refresh_interval(args.interval)
-    if args.FILE is None:
-        w.set_text(args.text)
-    else:
-        if args.FILE[0] == "-":
-            text = sys.stdin.read()
-        else:
-            with open(args.FILE) as fin:
-                text = fin.read()
-        w.set_text(text.rstrip("\n"))
-    w.set_command(args.command)
-    w.set_borderless(args.borderless)
-    if args.geometry is not None:
-        w.setGeometry(args.geometry)
-    w.show()
-    sys.exit(app.exec_())
-
-
-def str2qrect(text: str):
-    m = re.match(r'^(\d+)x(\d+)\+(\d+)\+(\d+)$', text)
-    if not m:
-        raise Exception("error: couldn't parse geometry (WxH+X+Y): {}".format(text))
-    else:
-        return QRect(int(m.group(3)),
-                     int(m.group(4)),
-                     int(m.group(1)),
-                     int(m.group(2)))
-
-
 def parse_args(args):
+    def QRect_from_string(text: str) -> QRect:
+        m = re.match(r'^(\d+)x(\d+)\+(\d+)\+(\d+)$', text)
+        if not m:
+            raise ValueError("couldn't parse geometry (WxH+X+Y): {}".format(text))
+        else:
+            return QRect(int(m.group(3)),
+                         int(m.group(4)),
+                         int(m.group(1)),
+                         int(m.group(2)))
+
+    QRect_from_string.__name__ = "QRect"
+
+    def QColor_from_string(text: str) -> QColor:
+        color = QColor(text)
+        if not color.isValid():
+            raise ValueError("invalid color name: ")
+        else:
+            return color
+
+    QColor_from_string.__name__ = "QColor"
+
     parser = argparse.ArgumentParser(description="QFlashlight - Fill the screen with a solid color")
     parser.add_argument("FILE", nargs="?")
 
     style = parser.add_argument_group("Style")
-    style.add_argument("-c", "--color", metavar="COLOR", type=QColorArgument, default=Qt.black,
+    style.add_argument("-c", "--color", metavar="COLOR", type=QColor_from_string, default=Qt.black,
                        help="Color to use for the background (#FFF, #FFFFFF or name)")
-    style.add_argument("-T", "--text-color", metavar="COLOR", type=QColorArgument, default=Qt.white,
+    style.add_argument("-T", "--text-color", metavar="COLOR", type=QColor_from_string, default=Qt.white,
                        help="Color to use for text")
 
     content = parser.add_argument_group("Content")
@@ -289,7 +269,7 @@ def parse_args(args):
                         help="Hide the mouse cursor")
     window.add_argument("-b", "--borderless", action="store_true", default=False,
                         help="Run the window without a border")
-    window.add_argument("-g", "--geometry", metavar="WxH+X+Y", type=QRectArgument, default=None,
+    window.add_argument("-g", "--geometry", metavar="WxH+X+Y", type=QRect_from_string, default=None,
                         help="Set the size and position of the window")
 
     return parser.parse_args(args)
@@ -298,15 +278,45 @@ def parse_args(args):
 def main(argv):
     args = parse_args(argv[1:])
 
-    bg_color = QColor(args.color)
-    if not bg_color.isValid():
-        raise Exception("invalid color name")
+    # allow Ctrl-C to close the app
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    fg_color = QColor(args.text_color)
-    if not fg_color.isValid():
-        raise Exception("invalid text color name")
+    app = QApplication(sys.argv)
 
-    fullscreen_flashlight(bg_color, fg_color, args)
+    w = FlashlightWidget()
+
+    # Style
+    w.set_background_color(args.color)
+    w.set_foreground_color(args.text_color)
+
+    # Content
+    if args.FILE is None:
+        w.set_text(args.text)
+    else:
+        if args.FILE[0] == "-":
+            text = sys.stdin.read()
+        else:
+            with open(args.FILE) as fin:
+                text = fin.read()
+        w.set_text(text.rstrip("\n"))
+
+    w.set_command(args.command)
+    w.set_refresh_interval(args.interval)
+
+    # Window
+    if not args.window:
+        w.set_fullscreen(True)
+
+    if args.hide_cursor:
+        w.hide_cursor()
+
+    w.set_borderless(args.borderless)
+    if args.geometry is not None:
+        w.setGeometry(args.geometry)
+
+    # Run App
+    w.show()
+    sys.exit(app.exec_())
 
 
 def main_entrypoint():
