@@ -76,7 +76,9 @@ def parse_args(args: list[str]) -> argparse.Namespace:
                          help="Refresh the screen and rerun command every SECONDS seconds (default: None)")
 
     window = parser.add_argument_group("Window")
-    window.add_argument("-w", "--window", action="store_true", default=False,
+    window.add_argument("-f", "--fullscreen", action="store_true", default=False,
+                        help="Start in fullscreen mode")
+    window.add_argument("-w", "--window", action="store_false", dest="fullscreen", default=False,
                         help="Start in window mode")
     window.add_argument("-m", "--hide-cursor", action="store_true", default=False,
                         help="Hide the mouse cursor")
@@ -116,8 +118,7 @@ def main(argv: list[str]) -> None:
     if args.command is not None:
         app.set_command(args.command, args.interval)
 
-    # Window
-    if not args.window:
+    if args.fullscreen:
         app.set_window_mode(WindowMode.FULLSCREEN)
 
     if args.hide_cursor:
