@@ -17,19 +17,24 @@
 
 import subprocess
 
-from typing import Callable, Optional
+from typing import Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPoint, QRectF, QTimerEvent
 from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
                          QPainter, QFont, QFontMetrics, QMouseEvent,
                          QPaintEvent, QKeyEvent)
-from PyQt5.QtWidgets import QWidget, QColorDialog, QMenu
+from PyQt5.QtWidgets import QWidget, QMenu
+
+if TYPE_CHECKING:
+    from qflashlight.application import Application
 
 
 class FlashlightWidget(QWidget):
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, app: 'Application', parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+
+        self._app = app
 
         self._bg_color: QColor = QColor(Qt.black)
         self._fg_color: QColor = QColor(Qt.white)
@@ -80,8 +85,8 @@ class FlashlightWidget(QWidget):
         else:
             menu.addAction("Hide window border", lambda: self.set_borderless(True))
 
-        menu.addAction("Change Color...", lambda: self.show_color_dialog())
-        menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
+        menu.addAction("Change Color...", lambda: self._app.show_color_dialog())
+        menu.addAction("Change Text Color...", lambda: self._app.show_text_color_dialog())
 
         menu.addSeparator()
 
@@ -90,36 +95,6 @@ class FlashlightWidget(QWidget):
         menu.addAction("Exit", on_exit)
 
         menu.exec(ev.globalPos())
-
-    def show_text_color_dialog(self) -> None:
-        self._show_color_dialog(lambda: self._fg_color, self.set_foreground_color)
-
-    def show_color_dialog(self) -> None:
-        self._show_color_dialog(lambda: self._bg_color, self.set_background_color)
-
-    def _show_color_dialog(self,
-                           getter: Callable[[], QColor],
-                           setter: Callable[[QColor], None]) -> None:
-        tmpcolor: Optional[QColor] = getter()
-
-        def set_color(color: QColor) -> None:
-            nonlocal tmpcolor
-            setter(color)
-            tmpcolor = None
-
-        def restore_color() -> None:
-            if tmpcolor is not None:
-                setter(tmpcolor)
-
-        color_dlg = QColorDialog(self)
-        color_dlg.setWindowModality(Qt.WindowModal)
-        color_dlg.setCurrentColor(getter())
-
-        color_dlg.currentColorChanged.connect(setter)
-        color_dlg.colorSelected.connect(set_color)
-        color_dlg.rejected.connect(restore_color)
-
-        color_dlg.show()
 
     def keyPressEvent(self, ev: QKeyEvent) -> None:
         if ev.key() == Qt.Key_Escape:
@@ -134,9 +109,9 @@ class FlashlightWidget(QWidget):
             else:
                 self.show_cursor()
         elif ev.key() == Qt.Key_C:
-            self.show_color_dialog()
+            self._app.show_color_dialog()
         elif ev.key() == Qt.Key_T:
-            self.show_text_color_dialog()
+            self._app.show_text_color_dialog()
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
@@ -147,12 +122,18 @@ class FlashlightWidget(QWidget):
         pal.setColor(QPalette.Background, self._bg_color)
         self.setPalette(pal)
 
+    def background_color(self) -> QColor:
+        return self._bg_color
+
     def set_foreground_color(self, fg_color: QColor) -> None:
         self._fg_color = fg_color
 
         pal = self.palette()
         pal.setColor(QPalette.Foreground, self._fg_color)
         self.setPalette(pal)
+
+    def foreground_color(self) -> QColor:
+        return self._fg_color
 
     def set_font(self, font: QFont) -> None:
         self._font = font

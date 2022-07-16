@@ -21,6 +21,7 @@ from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QColor, QFont
 
 from qflashlight.flashlight_widget import FlashlightWidget
+from qflashlight.color_dialog import show_color_dialog
 
 
 class WindowMode(Enum):
@@ -33,7 +34,7 @@ class WindowMode(Enum):
 class Application:
 
     def __init__(self) -> None:
-        self._flashlight_widget = FlashlightWidget()
+        self._flashlight_widget = FlashlightWidget(self)
         self._window_mode = WindowMode.WINDOW
 
     def show(self) -> None:
@@ -75,6 +76,16 @@ class Application:
     def set_command(self, command: str, refresh_interval_sec: float) -> None:
         self._flashlight_widget.set_command(command)
         self._flashlight_widget.set_refresh_interval(refresh_interval_sec)
+
+    def show_color_dialog(self) -> None:
+        show_color_dialog(self._flashlight_widget,
+                          self._flashlight_widget.background_color,
+                          self._flashlight_widget.set_background_color)
+
+    def show_text_color_dialog(self) -> None:
+        show_color_dialog(self._flashlight_widget,
+                          self._flashlight_widget.foreground_color,
+                          self._flashlight_widget.set_foreground_color)
 
 
 # EOF #
