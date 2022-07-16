@@ -23,20 +23,22 @@ import signal
 import subprocess
 import sys
 
-from typing import Optional
+from typing import Callable, Optional
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QRectF
-from PyQt5.QtGui import QColor, QPalette, QIcon, QContextMenuEvent, QPainter, QFont, QFontMetrics
+from PyQt5.QtCore import Qt, QPoint, QRect, QRectF, QTimerEvent
+from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
+                         QPainter, QFont, QFontMetrics, QMouseEvent,
+                         QPaintEvent, QKeyEvent)
 from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
 
 
 class FlashlightWidget(QWidget):
 
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
 
-        self._bg_color: QColor = Qt.black
-        self._fg_color: QColor = Qt.white
+        self._bg_color: QColor = QColor(Qt.black)
+        self._fg_color: QColor = QColor(Qt.white)
         self._font: QFont = QFont()
 
         self._text: Optional[str] = None
@@ -54,13 +56,13 @@ class FlashlightWidget(QWidget):
 
         self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
-    def mouseDoubleClickEvent(self, ev) -> None:
+    def mouseDoubleClickEvent(self, ev: QMouseEvent) -> None:
         self.set_fullscreen(not self._fullscreen)
 
-    def mousePressEvent(self, ev) -> None:
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
         self._mpos = ev.pos()
 
-    def mouseMoveEvent(self, ev) -> None:
+    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
         if ev.buttons() & Qt.LeftButton:
             diff = ev.pos() - self._mpos
             newpos = self.pos() + diff
@@ -88,7 +90,11 @@ class FlashlightWidget(QWidget):
         menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
 
         menu.addSeparator()
-        menu.addAction("Exit", lambda: self.close())
+
+        def on_exit() -> None:
+            self.close()
+        menu.addAction("Exit", on_exit)
+
         menu.exec(ev.globalPos())
 
     def show_text_color_dialog(self) -> None:
@@ -97,15 +103,17 @@ class FlashlightWidget(QWidget):
     def show_color_dialog(self) -> None:
         self._show_color_dialog(lambda: self._bg_color, self.set_background_color)
 
-    def _show_color_dialog(self, getter, setter) -> None:
-        tmpcolor = getter()
+    def _show_color_dialog(self,
+                           getter: Callable[[], QColor],
+                           setter: Callable[[QColor], None]) -> None:
+        tmpcolor: Optional[QColor] = getter()
 
-        def set_color(color):
+        def set_color(color: QColor) -> None:
             nonlocal tmpcolor
             setter(color)
             tmpcolor = None
 
-        def restore_color():
+        def restore_color() -> None:
             if tmpcolor is not None:
                 setter(tmpcolor)
 
@@ -119,7 +127,7 @@ class FlashlightWidget(QWidget):
 
         color_dlg.show()
 
-    def keyPressEvent(self, ev) -> None:
+    def keyPressEvent(self, ev: QKeyEvent) -> None:
         if ev.key() == Qt.Key_Escape:
             self.close()
         elif ev.key() == Qt.Key_Q:
@@ -138,7 +146,7 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_B:
             self.set_borderless(not self._borderless)
 
-    def set_background_color(self, bg_color) -> None:
+    def set_background_color(self, bg_color: QColor) -> None:
         self._bg_color = bg_color
 
         pal = self.palette()
@@ -166,9 +174,9 @@ class FlashlightWidget(QWidget):
         self._refresh_interval = interval
 
         if self._refresh_interval is not None:
-            self.startTimer(self._refresh_interval * 1000.0)
+            self.startTimer(int(self._refresh_interval * 1000))
 
-    def timerEvent(self, ev) -> None:
+    def timerEvent(self, ev: QTimerEvent) -> None:
         self._update_text_from_command()
 
     def _update_text_from_command(self) -> None:
@@ -204,7 +212,7 @@ class FlashlightWidget(QWidget):
         self.unsetCursor()
         self._cursor_visible = True
 
-    def paintEvent(self, ev) -> None:
+    def paintEvent(self, ev: QPaintEvent) -> None:
         if self._text is not None:
             text = self._text
             painter = QPainter(self)
@@ -227,16 +235,16 @@ class FlashlightWidget(QWidget):
                              Qt.AlignCenter, text)
 
 
-def parse_args(args):
+def parse_args(args: list[str]) -> argparse.Namespace:
     def QRect_from_string(text: str) -> QRect:
         m = re.match(r'^(\d+)x(\d+)\+(\d+)\+(\d+)$', text)
         if not m:
-            raise ValueError("couldn't parse geometry (WxH+X+Y): {}".format(text))
-        else:
-            return QRect(int(m.group(3)),
-                         int(m.group(4)),
-                         int(m.group(1)),
-                         int(m.group(2)))
+            raise ValueError(f"couldn't parse geometry (WxH+X+Y): {text}")
+
+        return QRect(int(m.group(3)),
+                     int(m.group(4)),
+                     int(m.group(1)),
+                     int(m.group(2)))
 
     QRect_from_string.__name__ = "QRect"
 
@@ -244,8 +252,8 @@ def parse_args(args):
         color = QColor(text)
         if not color.isValid():
             raise ValueError("invalid color name: ")
-        else:
-            return color
+
+        return color
 
     QColor_from_string.__name__ = "QColor"
 
@@ -286,7 +294,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def main(argv):
+def main(argv: list[str]) -> None:
     args = parse_args(argv[1:])
 
     # allow Ctrl-C to close the app
@@ -331,7 +339,7 @@ def main(argv):
     sys.exit(app.exec_())
 
 
-def main_entrypoint():
+def main_entrypoint() -> None:
     main(sys.argv)
 
 
