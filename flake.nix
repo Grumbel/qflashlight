@@ -35,6 +35,14 @@
             preCheck = ''
               export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
             '';
+            checkPhase = ''
+              runHook preCheck
+              flake8 qflashlight
+              pyright qflashlight
+              mypy qflashlight
+              pylint qflashlight
+              runHook postCheck
+            '';
             propagatedBuildInputs = with pythonPackages; [
               setuptools
               pyqt5
@@ -71,6 +79,10 @@
         apps = rec {
           qflashlight = flake-utils.lib.mkApp {
             drv = packages.qflashlight;
+            exePath = "/bin/qflashlight";
+          };
+          qflashlight-nocheck = flake-utils.lib.mkApp {
+            drv = packages.qflashlight-nocheck;
             exePath = "/bin/qflashlight";
           };
           default = qflashlight;
