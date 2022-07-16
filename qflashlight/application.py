@@ -15,13 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from typing import Optional
+
 from enum import Enum
 
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QColor, QFont
 
-from qflashlight.flashlight_widget import FlashlightWidget
 from qflashlight.color_dialog import show_color_dialog
+from qflashlight.flashlight_widget import FlashlightWidget
+from qflashlight.text_generator import TextGenerator
 
 
 class WindowMode(Enum):
@@ -36,6 +39,7 @@ class Application:
     def __init__(self) -> None:
         self._flashlight_widget = FlashlightWidget(self)
         self._window_mode = WindowMode.WINDOW
+        self._text_generator: Optional[TextGenerator] = None
 
     def show(self) -> None:
         self._flashlight_widget.show()
@@ -74,11 +78,8 @@ class Application:
         self._flashlight_widget.set_font(font)
 
     def set_text(self, text: str) -> None:
+        self._text_generator = None
         self._flashlight_widget.set_text(text)
-
-    def set_command(self, command: str, refresh_interval_sec: float) -> None:
-        self._flashlight_widget.set_command(command)
-        self._flashlight_widget.set_refresh_interval(refresh_interval_sec)
 
     def show_color_dialog(self) -> None:
         show_color_dialog(self._flashlight_widget,
@@ -89,6 +90,15 @@ class Application:
         show_color_dialog(self._flashlight_widget,
                           self._flashlight_widget.foreground_color,
                           self._flashlight_widget.set_foreground_color)
+
+    def set_command(self, command: str, refresh_interval_sec: float) -> None:
+        def update_text(text: str) -> None:
+            self._flashlight_widget.set_text(text)
+            self._flashlight_widget.repaint()
+
+        self._text_generator = TextGenerator(command, refresh_interval_sec,
+                                             update_text)
+        self._text_generator.start()
 
 
 # EOF #

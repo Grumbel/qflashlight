@@ -15,11 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import subprocess
-
 from typing import Optional, TYPE_CHECKING
 
-from PyQt5.QtCore import Qt, QPoint, QRectF, QTimerEvent
+from PyQt5.QtCore import Qt, QPoint, QRectF
 from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
                          QPainter, QFont, QFontMetrics, QMouseEvent,
                          QPaintEvent, QKeyEvent)
@@ -140,26 +138,6 @@ class FlashlightWidget(QWidget):
 
     def set_text(self, text: str) -> None:
         self._text = text
-
-    def set_command(self, command: str) -> None:
-        self._command = command
-        self._update_text_from_command()
-
-    def set_refresh_interval(self, interval: Optional[float]) -> None:
-        self._refresh_interval = interval
-
-        if self._refresh_interval is not None:
-            self.startTimer(int(self._refresh_interval * 1000))
-
-    def timerEvent(self, ev: QTimerEvent) -> None:
-        self._update_text_from_command()
-
-    def _update_text_from_command(self) -> None:
-        if self._command is None:
-            return
-
-        self._text = subprocess.getoutput(self._command)
-        self.update()
 
     def set_fullscreen(self, fullscreen: bool) -> None:
         self._fullscreen = fullscreen

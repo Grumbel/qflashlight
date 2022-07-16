@@ -113,7 +113,8 @@ def main(argv: list[str]) -> None:
                 text = fin.read()
         app.set_text(text.rstrip("\n"))
 
-    app.set_command(args.command, args.interval)
+    if args.command is not None:
+        app.set_command(args.command, args.interval)
 
     # Window
     if not args.window:
