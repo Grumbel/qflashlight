@@ -20,219 +20,13 @@
 import argparse
 import re
 import signal
-import subprocess
 import sys
 
-from typing import Callable, Optional
+from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import QApplication
 
-from PyQt5.QtCore import Qt, QPoint, QRect, QRectF, QTimerEvent
-from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
-                         QPainter, QFont, QFontMetrics, QMouseEvent,
-                         QPaintEvent, QKeyEvent)
-from PyQt5.QtWidgets import QApplication, QWidget, QColorDialog, QMenu
-
-
-class FlashlightWidget(QWidget):
-
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        super().__init__(parent)
-
-        self._bg_color: QColor = QColor(Qt.black)
-        self._fg_color: QColor = QColor(Qt.white)
-        self._font: QFont = QFont()
-
-        self._text: Optional[str] = None
-        self._command: Optional[str] = None
-        self._refresh_interval: Optional[float] = None
-
-        self._mpos = QPoint()
-
-        self._cursor_visible = True
-        self._borderless = False
-        self._fullscreen = False
-
-        self.setWindowTitle("QFlashlight")
-        self.setAutoFillBackground(True)
-
-        self.setWindowIcon(QIcon.fromTheme("qflashlight"))
-
-    def mouseDoubleClickEvent(self, ev: QMouseEvent) -> None:
-        self.set_fullscreen(not self._fullscreen)
-
-    def mousePressEvent(self, ev: QMouseEvent) -> None:
-        self._mpos = ev.pos()
-
-    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        if ev.buttons() & Qt.LeftButton:
-            diff = ev.pos() - self._mpos
-            newpos = self.pos() + diff
-            self.move(newpos)
-
-    def contextMenuEvent(self, ev: QContextMenuEvent) -> None:
-        menu = QMenu()
-
-        if self._fullscreen:
-            menu.addAction("Exit full screen", lambda: self.set_fullscreen(False))
-        else:
-            menu.addAction("Enter full screen", lambda: self.set_fullscreen(True))
-
-        if self._cursor_visible:
-            menu.addAction("Hide mouse cursor", lambda: self.hide_cursor())
-        else:
-            menu.addAction("Show mouse cursor", lambda: self.show_cursor())
-
-        if self._borderless:
-            menu.addAction("Show window border", lambda: self.set_borderless(False))
-        else:
-            menu.addAction("Hide window border", lambda: self.set_borderless(True))
-
-        menu.addAction("Change Color...", lambda: self.show_color_dialog())
-        menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
-
-        menu.addSeparator()
-
-        def on_exit() -> None:
-            self.close()
-        menu.addAction("Exit", on_exit)
-
-        menu.exec(ev.globalPos())
-
-    def show_text_color_dialog(self) -> None:
-        self._show_color_dialog(lambda: self._fg_color, self.set_foreground_color)
-
-    def show_color_dialog(self) -> None:
-        self._show_color_dialog(lambda: self._bg_color, self.set_background_color)
-
-    def _show_color_dialog(self,
-                           getter: Callable[[], QColor],
-                           setter: Callable[[QColor], None]) -> None:
-        tmpcolor: Optional[QColor] = getter()
-
-        def set_color(color: QColor) -> None:
-            nonlocal tmpcolor
-            setter(color)
-            tmpcolor = None
-
-        def restore_color() -> None:
-            if tmpcolor is not None:
-                setter(tmpcolor)
-
-        color_dlg = QColorDialog(self)
-        color_dlg.setWindowModality(Qt.WindowModal)
-        color_dlg.setCurrentColor(getter())
-
-        color_dlg.currentColorChanged.connect(setter)
-        color_dlg.colorSelected.connect(set_color)
-        color_dlg.rejected.connect(restore_color)
-
-        color_dlg.show()
-
-    def keyPressEvent(self, ev: QKeyEvent) -> None:
-        if ev.key() == Qt.Key_Escape:
-            self.close()
-        elif ev.key() == Qt.Key_Q:
-            self.close()
-        elif ev.key() == Qt.Key_F:
-            self.set_fullscreen(not self._fullscreen)
-        elif ev.key() == Qt.Key_M:
-            if self._cursor_visible:
-                self.hide_cursor()
-            else:
-                self.show_cursor()
-        elif ev.key() == Qt.Key_C:
-            self.show_color_dialog()
-        elif ev.key() == Qt.Key_T:
-            self.show_text_color_dialog()
-        elif ev.key() == Qt.Key_B:
-            self.set_borderless(not self._borderless)
-
-    def set_background_color(self, bg_color: QColor) -> None:
-        self._bg_color = bg_color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Background, self._bg_color)
-        self.setPalette(pal)
-
-    def set_foreground_color(self, fg_color: QColor) -> None:
-        self._fg_color = fg_color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Foreground, self._fg_color)
-        self.setPalette(pal)
-
-    def set_font(self, font: QFont) -> None:
-        self._font = font
-
-    def set_text(self, text: str) -> None:
-        self._text = text
-
-    def set_command(self, command: str) -> None:
-        self._command = command
-        self._update_text_from_command()
-
-    def set_refresh_interval(self, interval: Optional[float]) -> None:
-        self._refresh_interval = interval
-
-        if self._refresh_interval is not None:
-            self.startTimer(int(self._refresh_interval * 1000))
-
-    def timerEvent(self, ev: QTimerEvent) -> None:
-        self._update_text_from_command()
-
-    def _update_text_from_command(self) -> None:
-        if self._command is None:
-            return
-
-        self._text = subprocess.getoutput(self._command)
-        self.update()
-
-    def set_fullscreen(self, fullscreen: bool) -> None:
-        self._fullscreen = fullscreen
-
-        if self._fullscreen:
-            self.setWindowState(self.windowState() | Qt.WindowFullScreen)
-        else:
-            self.setWindowState(self.windowState() & ~Qt.WindowFullScreen)
-
-    def set_borderless(self, borderless: bool) -> None:
-        self._borderless = borderless
-
-        if self._borderless:
-            self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-            self.show()
-        else:
-            self.setWindowFlags(self.windowFlags() & ~Qt.FramelessWindowHint)
-            self.show()
-
-    def hide_cursor(self) -> None:
-        self.setCursor(Qt.BlankCursor)
-        self._cursor_visible = False
-
-    def show_cursor(self) -> None:
-        self.unsetCursor()
-        self._cursor_visible = True
-
-    def paintEvent(self, ev: QPaintEvent) -> None:
-        if self._text is not None:
-            text = self._text
-            painter = QPainter(self)
-            painter.setFont(self._font)
-            fm = QFontMetrics(painter.font())
-            rect = fm.size(Qt.AlignCenter, text)
-
-            src_aspect = rect.width() / rect.height()
-            dst_aspect = self.width() / self.height()
-
-            if src_aspect > dst_aspect:
-                sx = self.width() / rect.width()
-                sy = sx
-            else:
-                sy = self.height() / rect.height()
-                sx = sy
-
-            painter.scale(sx, sy)
-            painter.drawText(QRectF(0, 0, self.width() / sx, self.height() / sy),
-                             Qt.AlignCenter, text)
+from qflashlight.application import Application, WindowMode
 
 
 def parse_args(args: list[str]) -> argparse.Namespace:
@@ -300,43 +94,43 @@ def main(argv: list[str]) -> None:
     # allow Ctrl-C to close the app
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    app = QApplication(sys.argv)
-
-    w = FlashlightWidget()
+    qapp = QApplication(sys.argv)
+    app = Application()
 
     # Style
-    w.set_background_color(args.color)
-    w.set_foreground_color(args.text_color)
-    w.set_font(args.font)
+    app.set_foreground_color(args.text_color)
+    app.set_background_color(args.color)
+    app.set_font(args.font)
 
     # Content
     if args.FILE is None:
-        w.set_text(args.text)
+        app.set_text(args.text)
     else:
         if args.FILE[0] == "-":
             text = sys.stdin.read()
         else:
             with open(args.FILE) as fin:
                 text = fin.read()
-        w.set_text(text.rstrip("\n"))
+        app.set_text(text.rstrip("\n"))
 
-    w.set_command(args.command)
-    w.set_refresh_interval(args.interval)
+    app.set_command(args.command, args.interval)
 
     # Window
     if not args.window:
-        w.set_fullscreen(True)
+        app.set_window_mode(WindowMode.FULLSCREEN)
 
     if args.hide_cursor:
-        w.hide_cursor()
+        app.set_hide_cursor(True)
 
-    w.set_borderless(args.borderless)
+    if args.borderless:
+        app.set_window_mode(WindowMode.BORDERLESS)
+
     if args.geometry is not None:
-        w.setGeometry(args.geometry)
+        app.set_window_geometry(args.geometry)
 
     # Run App
-    w.show()
-    sys.exit(app.exec_())
+    app.show()
+    sys.exit(qapp.exec_())
 
 
 def main_entrypoint() -> None:
