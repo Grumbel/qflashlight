@@ -120,7 +120,7 @@ def main(argv: list[str]) -> None:
         app.set_window_mode(WindowMode.FULLSCREEN)
 
     if args.hide_cursor:
-        app.set_hide_cursor(True)
+        app.set_show_cursor(False)
 
     if args.borderless:
         app.set_window_mode(WindowMode.BORDERLESS)

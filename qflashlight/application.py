@@ -58,8 +58,11 @@ class Application:
     def set_window_geometry(self, geometry: QRect) -> None:
         self._flashlight_widget.setGeometry(geometry)
 
-    def set_hide_cursor(self, hide: bool) -> None:
-        self._flashlight_widget.hide_cursor()
+    def set_show_cursor(self, show_cursor: bool) -> None:
+        if show_cursor:
+            self._flashlight_widget.show_cursor()
+        else:
+            self._flashlight_widget.hide_cursor()
 
     def set_foreground_color(self, fgcolor: QColor) -> None:
         self._flashlight_widget.set_foreground_color(fgcolor)
