@@ -18,9 +18,9 @@
 from typing import Optional, TYPE_CHECKING
 
 from PyQt5.QtCore import Qt, QPoint, QRectF
-from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
-                         QPainter, QFont, QFontMetrics, QMouseEvent,
-                         QPaintEvent, QKeyEvent)
+from PyQt5.QtGui import (QPalette, QIcon, QContextMenuEvent, QPainter,
+                         QFontMetrics, QMouseEvent, QPaintEvent,
+                         QKeyEvent)
 from PyQt5.QtWidgets import QWidget
 
 if TYPE_CHECKING:
@@ -33,13 +33,6 @@ class FlashlightWidget(QWidget):
         super().__init__(parent)
 
         self._app = app
-
-        self._bg_color: QColor = QColor(Qt.black)
-        self._fg_color: QColor = QColor(Qt.white)
-        self._font: QFont = QFont()
-
-        self._text: Optional[str] = None
-
         self._mpos = QPoint()
 
         self.setWindowTitle("QFlashlight")
@@ -78,32 +71,6 @@ class FlashlightWidget(QWidget):
         elif ev.key() == Qt.Key_B:
             self._app.toggle_borderless()
 
-    def set_background_color(self, bg_color: QColor) -> None:
-        self._bg_color = bg_color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Background, self._bg_color)
-        self.setPalette(pal)
-
-    def background_color(self) -> QColor:
-        return self._bg_color
-
-    def set_foreground_color(self, fg_color: QColor) -> None:
-        self._fg_color = fg_color
-
-        pal = self.palette()
-        pal.setColor(QPalette.Foreground, self._fg_color)
-        self.setPalette(pal)
-
-    def foreground_color(self) -> QColor:
-        return self._fg_color
-
-    def set_font(self, font: QFont) -> None:
-        self._font = font
-
-    def set_text(self, text: str) -> None:
-        self._text = text
-
     def set_fullscreen(self, fullscreen: bool) -> None:
         if fullscreen:
             self.setWindowState(self.windowState() | Qt.WindowFullScreen)
@@ -121,10 +88,20 @@ class FlashlightWidget(QWidget):
             self.show()
 
     def paintEvent(self, ev: QPaintEvent) -> None:
-        if self._text is not None:
-            text = self._text
+        model = self._app.flashlight_model()
+
+        pal = self.palette()
+        pal.setColor(QPalette.Background, model.background_color())
+        self.setPalette(pal)
+
+        pal = self.palette()
+        pal.setColor(QPalette.Foreground, model.foreground_color())
+        self.setPalette(pal)
+
+        text = model.text()
+        if text is not None:
             painter = QPainter(self)
-            painter.setFont(self._font)
+            painter.setFont(model.font())
             fm = QFontMetrics(painter.font())
             rect = fm.size(Qt.AlignCenter, text)
 

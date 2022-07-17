@@ -22,6 +22,7 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QMenu
 
 from qflashlight.color_dialog import show_color_dialog
+from qflashlight.flashlight_model import FlashlightModel
 from qflashlight.flashlight_widget import FlashlightWidget
 from qflashlight.text_generator import TextGenerator
 
@@ -34,6 +35,12 @@ class Application:
         self._cursor_visible: bool = True
         self._flashlight_widget = FlashlightWidget(self)
         self._text_generator: Optional[TextGenerator] = None
+
+        self._flashlight_model = FlashlightModel()
+        self._flashlight_model.sig_changed.connect(self._flashlight_widget.repaint)
+
+    def flashlight_model(self) -> FlashlightModel:
+        return self._flashlight_model
 
     def show(self) -> None:
         self._flashlight_widget.show()
@@ -74,9 +81,9 @@ class Application:
         self._cursor_visible = visible
 
         if self._cursor_visible:
-            self._flashlight_widget.setCursor(Qt.BlankCursor)
-        else:
             self._flashlight_widget.unsetCursor()
+        else:
+            self._flashlight_widget.setCursor(Qt.BlankCursor)
 
     def cursor_visible(self) -> bool:
         return self._cursor_visible
@@ -85,31 +92,31 @@ class Application:
         self.set_cursor_visible(not self._cursor_visible)
 
     def set_foreground_color(self, fgcolor: QColor) -> None:
-        self._flashlight_widget.set_foreground_color(fgcolor)
+        self._flashlight_model.set_foreground_color(fgcolor)
 
     def set_background_color(self, bgcolor: QColor) -> None:
-        self._flashlight_widget.set_background_color(bgcolor)
+        self._flashlight_model.set_background_color(bgcolor)
 
     def set_font(self, font: QFont) -> None:
-        self._flashlight_widget.set_font(font)
+        self._flashlight_model.set_font(font)
 
     def set_text(self, text: str) -> None:
         self._text_generator = None
-        self._flashlight_widget.set_text(text)
+        self._flashlight_model.set_text(text)
 
     def show_color_dialog(self) -> None:
         show_color_dialog(self._flashlight_widget,
-                          self._flashlight_widget.background_color,
-                          self._flashlight_widget.set_background_color)
+                          self._flashlight_model.background_color,
+                          self._flashlight_model.set_background_color)
 
     def show_text_color_dialog(self) -> None:
         show_color_dialog(self._flashlight_widget,
-                          self._flashlight_widget.foreground_color,
-                          self._flashlight_widget.set_foreground_color)
+                          self._flashlight_model.foreground_color,
+                          self._flashlight_model.set_foreground_color)
 
     def set_command(self, command: str, refresh_interval_sec: float) -> None:
         def update_text(text: str) -> None:
-            self._flashlight_widget.set_text(text)
+            self._flashlight_model.set_text(text)
             self._flashlight_widget.repaint()
 
         self._text_generator = TextGenerator(command, refresh_interval_sec,
