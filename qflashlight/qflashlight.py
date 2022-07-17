@@ -26,7 +26,7 @@ from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QApplication
 
-from qflashlight.application import Application, WindowMode
+from qflashlight.application import Application
 
 
 def parse_args(args: list[str]) -> argparse.Namespace:
@@ -119,13 +119,13 @@ def main(argv: list[str]) -> None:
         app.set_command(args.command, args.interval)
 
     if args.fullscreen:
-        app.set_window_mode(WindowMode.FULLSCREEN)
+        app.set_fullscreen(True)
+
+    if args.borderless:
+        app.set_borderless(True)
 
     if args.hide_cursor:
         app.set_show_cursor(False)
-
-    if args.borderless:
-        app.set_window_mode(WindowMode.BORDERLESS)
 
     if args.geometry is not None:
         app.set_window_geometry(args.geometry)

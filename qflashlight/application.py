@@ -17,8 +17,6 @@
 
 from typing import Optional
 
-from enum import Enum
-
 from PyQt5.QtCore import QRect
 from PyQt5.QtGui import QColor, QFont
 
@@ -27,37 +25,28 @@ from qflashlight.flashlight_widget import FlashlightWidget
 from qflashlight.text_generator import TextGenerator
 
 
-class WindowMode(Enum):
-
-    WINDOW = 1
-    BORDERLESS = 2
-    FULLSCREEN = 3
-
-
 class Application:
 
     def __init__(self) -> None:
         self._flashlight_widget = FlashlightWidget(self)
-        self._window_mode = WindowMode.WINDOW
+        self._fullscreen: bool = False
+        self._borderless: bool = False
         self._text_generator: Optional[TextGenerator] = None
 
     def show(self) -> None:
         self._flashlight_widget.show()
 
-    def set_window_mode(self, mode: WindowMode) -> None:
-        if self._window_mode == mode:
-            return
+    def set_fullscreen(self, fullscreen: bool) -> None:
+        self._fullscreen = fullscreen
+        self._apply_window_mode()
 
-        self._window_mode = mode
+    def set_borderless(self, borderless: bool) -> None:
+        self._borderless = borderless
+        self._apply_window_mode()
 
-        if mode == WindowMode.WINDOW:
-            self._flashlight_widget.set_fullscreen(False)
-            self._flashlight_widget.set_borderless(False)
-        elif mode == WindowMode.BORDERLESS:
-            self._flashlight_widget.set_fullscreen(False)
-            self._flashlight_widget.set_borderless(True)
-        elif mode == WindowMode.FULLSCREEN:
-            self._flashlight_widget.set_fullscreen(True)
+    def _apply_window_mode(self) -> None:
+        self._flashlight_widget.set_fullscreen(self._fullscreen)
+        self._flashlight_widget.set_borderless(self._borderless)
 
     def set_window_geometry(self, geometry: QRect) -> None:
         self._flashlight_widget.setGeometry(geometry)
