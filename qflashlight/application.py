@@ -25,6 +25,7 @@ from qflashlight.color_dialog import show_color_dialog
 from qflashlight.flashlight_model import FlashlightModel
 from qflashlight.flashlight_widget import FlashlightWidget
 from qflashlight.text_generator import TextGenerator
+from qflashlight.text_dialog import show_text_dialog
 
 
 class Application:
@@ -114,6 +115,11 @@ class Application:
                           self._flashlight_model.foreground_color,
                           self._flashlight_model.set_foreground_color)
 
+    def show_text_dialog(self) -> None:
+        show_text_dialog(self._flashlight_widget,
+                         self._flashlight_model.text(),
+                         self.set_text)
+
     def set_command(self, command: str, refresh_interval_sec: float) -> None:
         def update_text(text: str) -> None:
             self._flashlight_model.set_text(text)
@@ -143,6 +149,7 @@ class Application:
 
         menu.addAction("Change Color...", lambda: self.show_color_dialog())
         menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
+        menu.addAction("Change Text...", lambda: self.show_text_dialog())
 
         menu.addSeparator()
 

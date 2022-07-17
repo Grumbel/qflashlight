@@ -64,6 +64,8 @@ class FlashlightWidget(QWidget):
             self._app.toggle_fullscreen()
         elif ev.key() == Qt.Key_M:
             self._app.toggle_cursor_visible()
+        elif ev.key() == Qt.Key_E:
+            self._app.show_text_dialog()
         elif ev.key() == Qt.Key_C:
             self._app.show_color_dialog()
         elif ev.key() == Qt.Key_T:

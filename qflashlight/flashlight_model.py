@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Optional
-
 from PyQt5.QtCore import Qt, QObject, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 
@@ -31,7 +29,7 @@ class FlashlightModel(QObject):
         self._bg_color: QColor = QColor(Qt.black)
         self._fg_color: QColor = QColor(Qt.white)
         self._font: QFont = QFont()
-        self._text: Optional[str] = None
+        self._text: str = ""
 
     def foreground_color(self) -> QColor:
         return self._fg_color
@@ -42,7 +40,7 @@ class FlashlightModel(QObject):
     def font(self) -> QFont:
         return self._font
 
-    def text(self) -> Optional[str]:
+    def text(self) -> str:
         return self._text
 
     def set_foreground_color(self, color: QColor) -> None:
