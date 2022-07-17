@@ -21,7 +21,7 @@ from PyQt5.QtCore import Qt, QPoint, QRectF
 from PyQt5.QtGui import (QColor, QPalette, QIcon, QContextMenuEvent,
                          QPainter, QFont, QFontMetrics, QMouseEvent,
                          QPaintEvent, QKeyEvent)
-from PyQt5.QtWidgets import QWidget, QMenu
+from PyQt5.QtWidgets import QWidget
 
 if TYPE_CHECKING:
     from qflashlight.application import Application
@@ -39,14 +39,8 @@ class FlashlightWidget(QWidget):
         self._font: QFont = QFont()
 
         self._text: Optional[str] = None
-        self._command: Optional[str] = None
-        self._refresh_interval: Optional[float] = None
 
         self._mpos = QPoint()
-
-        self._cursor_visible = True
-        self._borderless = False
-        self._fullscreen = False
 
         self.setWindowTitle("QFlashlight")
         self.setAutoFillBackground(True)
@@ -54,7 +48,7 @@ class FlashlightWidget(QWidget):
         self.setWindowIcon(QIcon.fromTheme("qflashlight"))
 
     def mouseDoubleClickEvent(self, ev: QMouseEvent) -> None:
-        self.set_fullscreen(not self._fullscreen)
+        self._app.toggle_fullscreen()
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:
         self._mpos = ev.pos()
@@ -66,52 +60,23 @@ class FlashlightWidget(QWidget):
             self.move(newpos)
 
     def contextMenuEvent(self, ev: QContextMenuEvent) -> None:
-        menu = QMenu()
-
-        if self._fullscreen:
-            menu.addAction("Exit full screen", lambda: self.set_fullscreen(False))
-        else:
-            menu.addAction("Enter full screen", lambda: self.set_fullscreen(True))
-
-        if self._cursor_visible:
-            menu.addAction("Hide mouse cursor", lambda: self.hide_cursor())
-        else:
-            menu.addAction("Show mouse cursor", lambda: self.show_cursor())
-
-        if self._borderless:
-            menu.addAction("Show window border", lambda: self.set_borderless(False))
-        else:
-            menu.addAction("Hide window border", lambda: self.set_borderless(True))
-
-        menu.addAction("Change Color...", lambda: self._app.show_color_dialog())
-        menu.addAction("Change Text Color...", lambda: self._app.show_text_color_dialog())
-
-        menu.addSeparator()
-
-        def on_exit() -> None:
-            self.close()
-        menu.addAction("Exit", on_exit)
-
-        menu.exec(ev.globalPos())
+        self._app.show_context_menu(ev.globalPos())
 
     def keyPressEvent(self, ev: QKeyEvent) -> None:
         if ev.key() == Qt.Key_Escape:
-            self.close()
+            self._app.close()
         elif ev.key() == Qt.Key_Q:
-            self.close()
+            self._app.close()
         elif ev.key() == Qt.Key_F:
-            self.set_fullscreen(not self._fullscreen)
+            self._app.toggle_fullscreen()
         elif ev.key() == Qt.Key_M:
-            if self._cursor_visible:
-                self.hide_cursor()
-            else:
-                self.show_cursor()
+            self._app.toggle_cursor_visible()
         elif ev.key() == Qt.Key_C:
             self._app.show_color_dialog()
         elif ev.key() == Qt.Key_T:
             self._app.show_text_color_dialog()
         elif ev.key() == Qt.Key_B:
-            self.set_borderless(not self._borderless)
+            self._app.toggle_borderless()
 
     def set_background_color(self, bg_color: QColor) -> None:
         self._bg_color = bg_color
@@ -140,30 +105,20 @@ class FlashlightWidget(QWidget):
         self._text = text
 
     def set_fullscreen(self, fullscreen: bool) -> None:
-        self._fullscreen = fullscreen
-
-        if self._fullscreen:
+        if fullscreen:
             self.setWindowState(self.windowState() | Qt.WindowFullScreen)
         else:
             self.setWindowState(self.windowState() & ~Qt.WindowFullScreen)
 
     def set_borderless(self, borderless: bool) -> None:
-        self._borderless = borderless
-
-        if self._borderless:
-            self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-            self.show()
+        if borderless:
+            # Only change setting when in window mode to avoid flickering in fullscreen
+            if not (self.windowState() & Qt.WindowFullScreen):
+                self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+                self.show()
         else:
             self.setWindowFlags(self.windowFlags() & ~Qt.FramelessWindowHint)
             self.show()
-
-    def hide_cursor(self) -> None:
-        self.setCursor(Qt.BlankCursor)
-        self._cursor_visible = False
-
-    def show_cursor(self) -> None:
-        self.unsetCursor()
-        self._cursor_visible = True
 
     def paintEvent(self, ev: QPaintEvent) -> None:
         if self._text is not None:

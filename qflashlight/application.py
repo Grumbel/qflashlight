@@ -17,8 +17,9 @@
 
 from typing import Optional
 
-from PyQt5.QtCore import QRect
+from PyQt5.QtCore import Qt, QRect, QPoint
 from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import QMenu
 
 from qflashlight.color_dialog import show_color_dialog
 from qflashlight.flashlight_widget import FlashlightWidget
@@ -28,20 +29,38 @@ from qflashlight.text_generator import TextGenerator
 class Application:
 
     def __init__(self) -> None:
-        self._flashlight_widget = FlashlightWidget(self)
         self._fullscreen: bool = False
         self._borderless: bool = False
+        self._cursor_visible: bool = True
+        self._flashlight_widget = FlashlightWidget(self)
         self._text_generator: Optional[TextGenerator] = None
 
     def show(self) -> None:
         self._flashlight_widget.show()
 
+    def close(self) -> None:
+        self._flashlight_widget.close()
+
     def set_fullscreen(self, fullscreen: bool) -> None:
         self._fullscreen = fullscreen
         self._apply_window_mode()
 
+    def fullscreen(self) -> bool:
+        return self._fullscreen
+
+    def toggle_fullscreen(self) -> None:
+        self._fullscreen = not self._fullscreen
+        self._apply_window_mode()
+
     def set_borderless(self, borderless: bool) -> None:
         self._borderless = borderless
+        self._apply_window_mode()
+
+    def borderless(self) -> bool:
+        return self._borderless
+
+    def toggle_borderless(self) -> None:
+        self._borderless = not self._borderless
         self._apply_window_mode()
 
     def _apply_window_mode(self) -> None:
@@ -51,11 +70,19 @@ class Application:
     def set_window_geometry(self, geometry: QRect) -> None:
         self._flashlight_widget.setGeometry(geometry)
 
-    def set_show_cursor(self, show_cursor: bool) -> None:
-        if show_cursor:
-            self._flashlight_widget.show_cursor()
+    def set_cursor_visible(self, visible: bool) -> None:
+        self._cursor_visible = visible
+
+        if self._cursor_visible:
+            self._flashlight_widget.setCursor(Qt.BlankCursor)
         else:
-            self._flashlight_widget.hide_cursor()
+            self._flashlight_widget.unsetCursor()
+
+    def cursor_visible(self) -> bool:
+        return self._cursor_visible
+
+    def toggle_cursor_visible(self) -> None:
+        self.set_cursor_visible(not self._cursor_visible)
 
     def set_foreground_color(self, fgcolor: QColor) -> None:
         self._flashlight_widget.set_foreground_color(fgcolor)
@@ -88,6 +115,33 @@ class Application:
         self._text_generator = TextGenerator(command, refresh_interval_sec,
                                              update_text)
         self._text_generator.start()
+
+    def show_context_menu(self, pos: QPoint) -> None:
+        menu = QMenu()
+
+        if self._fullscreen:
+            menu.addAction("Exit full screen", lambda: self.set_fullscreen(False))
+        else:
+            menu.addAction("Enter full screen", lambda: self.set_fullscreen(True))
+
+        if self._cursor_visible:
+            menu.addAction("Hide mouse cursor", lambda: self.set_cursor_visible(False))
+        else:
+            menu.addAction("Show mouse cursor", lambda: self.set_cursor_visible(True))
+
+        if self._borderless:
+            menu.addAction("Show window border", lambda: self.set_borderless(False))
+        else:
+            menu.addAction("Hide window border", lambda: self.set_borderless(True))
+
+        menu.addAction("Change Color...", lambda: self.show_color_dialog())
+        menu.addAction("Change Text Color...", lambda: self.show_text_color_dialog())
+
+        menu.addSeparator()
+
+        menu.addAction("Exit", self.close)
+
+        menu.exec(pos)
 
 
 # EOF #

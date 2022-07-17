@@ -125,7 +125,7 @@ def main(argv: list[str]) -> None:
         app.set_borderless(True)
 
     if args.hide_cursor:
-        app.set_show_cursor(False)
+        app.set_cursor_visible(False)
 
     if args.geometry is not None:
         app.set_window_geometry(args.geometry)
