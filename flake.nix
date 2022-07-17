@@ -65,28 +65,37 @@
           };
 
           default = qflashlight;
-        };
+         };
 
-        devShells = rec {
-          qflashlight-dev = pkgs.mkShell {
-            inputsFrom = [ packages.qflashlight ];
-            shellHook = packages.qflashlight.preCheck + ''
-              # runHook setuptoolsShellHook
+         devShells = rec {
+           qflashlight = pkgs.mkShell {
+             inputsFrom = [ packages.qflashlight ];
+             shellHook = packages.qflashlight.preCheck + ''
+               runHook setuptoolsShellHook
             '';
-          };
-        };
+           };
 
-        apps = rec {
-          qflashlight = flake-utils.lib.mkApp {
-            drv = packages.qflashlight;
-            exePath = "/bin/qflashlight";
-          };
-          qflashlight-nocheck = flake-utils.lib.mkApp {
-            drv = packages.qflashlight-nocheck;
-            exePath = "/bin/qflashlight";
-          };
-          default = qflashlight;
-        };
+           qflashlight-dev = pkgs.mkShell {
+             inputsFrom = [ packages.qflashlight ];
+             shellHook = packages.qflashlight.preCheck + ''
+               # runHook setuptoolsShellHook
+             '';
+           };
+
+           default = qflashlight;
+         };
+
+         apps = rec {
+           qflashlight = flake-utils.lib.mkApp {
+             drv = packages.qflashlight;
+             exePath = "/bin/qflashlight";
+           };
+           qflashlight-nocheck = flake-utils.lib.mkApp {
+             drv = packages.qflashlight-nocheck;
+             exePath = "/bin/qflashlight";
+           };
+           default = qflashlight;
+         };
        }
     );
 }
