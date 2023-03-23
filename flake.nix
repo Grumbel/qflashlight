@@ -2,7 +2,7 @@
   description = "An app that fills the whole screen with a color";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -12,7 +12,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
         pythonPackages = pkgs.python310Packages;
        in rec {
-         packages = flake-utils.lib.flattenTree rec {
+         packages = rec {
            PyQt5-stubs = pythonPackages.buildPythonPackage rec {
              pname = "PyQt5-stubs";
              version = "5.15.6.0";
