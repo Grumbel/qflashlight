@@ -2,7 +2,7 @@
   description = "An app that fills the whole screen with a color";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -22,20 +22,23 @@
         };
        in rec {
          packages = rec {
+           default = qflashlight;
 
           qflashlight = pythonPackages.buildPythonPackage rec {
             name = "qflashlight";
             src = self;
-            nativeBuildInputs = [ pkgs.qt5.wrapQtAppsHook ];
+
             makeWrapperArgs = [
               "\${qtWrapperArgs[@]}"
 
               "--set" "LIBGL_DRIVERS_PATH" "${pkgs.mesa.drivers}/lib/dri"
               "--prefix" "LD_LIBRARY_PATH" ":" "${pkgs.mesa.drivers}/lib"
             ];
+
             preCheck = ''
               export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
             '';
+
             checkPhase = ''
               runHook preCheck
               flake8 qflashlight
@@ -44,12 +47,18 @@
               pylint qflashlight
               runHook postCheck
             '';
+
+            nativeBuildInputs = with pkgs; [
+              qt5.wrapQtAppsHook
+            ];
+
             propagatedBuildInputs = with pythonPackages; [
               setuptools
               pyqt5
               pyxdg
             ];
-            checkInputs = (with pkgs; [
+
+            nativeCheckInputs = (with pkgs; [
               pyright
             ]) ++ (with pythonPackages; [
               flake8
@@ -64,8 +73,6 @@
           qflashlight-nocheck = qflashlight.override {
             doCheck = false;
           };
-
-          default = qflashlight;
          };
 
          devShells = rec {
@@ -82,20 +89,20 @@
                # runHook setuptoolsShellHook
              '';
            };
-
-           default = qflashlight;
          };
 
          apps = rec {
+           default = qflashlight;
+
            qflashlight = flake-utils.lib.mkApp {
              drv = packages.qflashlight;
              exePath = "/bin/qflashlight";
            };
+
            qflashlight-nocheck = flake-utils.lib.mkApp {
              drv = packages.qflashlight-nocheck;
              exePath = "/bin/qflashlight";
            };
-           default = qflashlight;
          };
        }
     );
