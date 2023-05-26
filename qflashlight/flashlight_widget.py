@@ -47,7 +47,7 @@ class FlashlightWidget(QWidget):
         self._mpos = ev.pos()
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
-        if ev.buttons() & Qt.LeftButton:
+        if bool(ev.buttons() & Qt.LeftButton):
             diff = ev.pos() - self._mpos
             newpos = self.pos() + diff
             self.move(newpos)
@@ -82,7 +82,7 @@ class FlashlightWidget(QWidget):
     def set_borderless(self, borderless: bool) -> None:
         if borderless:
             # Only change setting when in window mode to avoid flickering in fullscreen
-            if not (self.windowState() & Qt.WindowFullScreen):
+            if not bool(self.windowState() & Qt.WindowFullScreen):
                 self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
                 self.show()
         else:
