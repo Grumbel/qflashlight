@@ -10,7 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        pythonPackages = pkgs.python310Packages;
+        pythonPackages = pkgs.python3Packages;
 
         PyQt5-stubs = pythonPackages.buildPythonPackage rec {
           pname = "PyQt5-stubs";
