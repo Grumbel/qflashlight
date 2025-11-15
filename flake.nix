@@ -2,7 +2,7 @@
   description = "An app that fills the whole screen with a color";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -27,6 +27,9 @@
           qflashlight = pythonPackages.buildPythonPackage rec {
             name = "qflashlight";
             src = self;
+
+            pyproject = true;
+            build-system = [ pythonPackages.setuptools ];
 
             makeWrapperArgs = [
               "\${qtWrapperArgs[@]}"
