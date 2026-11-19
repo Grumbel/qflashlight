@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2017-2026 Ingo Ruhnke <grumbel@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # QFlashlight
 
 Simple Qt application that fills the screen (or a window) with a solid
@@ -87,6 +92,6 @@ qflashlight -C date -n 1 -c black -T lime
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE.txt](LICENSE.txt).
+GPL-3.0-or-later. See [LICENSES/GPL-3.0-or-later.txt](LICENSES/GPL-3.0-or-later.txt).
 
 Copyright (C) 2017–2026 Ingo Ruhnke <grumbel@gmail.com>

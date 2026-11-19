@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2017-2026 Ingo Ruhnke <grumbel@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 {
   description = "QFlashlight - Simple Qt-based fullscreen flashlight (C++/Qt6)";
 
@@ -51,6 +54,18 @@
               mainProgram = "qflashlight";
             };
           };
+        };
+
+        checks = {
+          qflashlight = self.packages.${system}.qflashlight;
+
+          reuse = pkgs.runCommand "qflashlight-reuse-lint" {
+            nativeBuildInputs = [ pkgs.reuse ];
+          } ''
+            cd ${self}
+            reuse lint
+            touch $out
+          '';
         };
 
         apps.default = {

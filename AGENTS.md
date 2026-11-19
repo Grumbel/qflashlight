@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2017-2026 Ingo Ruhnke <grumbel@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 # AGENTS.md — QFlashlight
 
 ## Overview
