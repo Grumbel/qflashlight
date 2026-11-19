@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
       }
       text = QString::fromLocal8Bit(f.readAll());
     }
-    if (text.endsWith('\n')) {
+    while (text.endsWith(QLatin1Char('\n')) || text.endsWith(QLatin1Char('\r'))) {
       text.chop(1);
     }
     app.setText(text);

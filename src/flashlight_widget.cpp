@@ -119,23 +119,28 @@ void FlashlightWidget::paintEvent(QPaintEvent* event)
     painter.setFont(model->font());
 
     const QFontMetrics fm(painter.font());
-    const QSize textSize = fm.size(Qt::TextSingleLine | Qt::AlignCenter, text);
+    // Multi-line aware size (equivalent to Python QFontMetrics.size with AlignCenter)
+    const QRect br = fm.boundingRect(QRect(0, 0, 0, 0),
+                                     Qt::AlignCenter | Qt::TextWordWrap,
+                                     text);
+    const int tw = qMax(1, br.width());
+    const int th = qMax(1, br.height());
 
     // Scale to fit while preserving aspect (matches Python)
-    const qreal srcAspect = textSize.width() / qreal(qMax(1, textSize.height()));
+    const qreal srcAspect = tw / qreal(th);
     const qreal dstAspect = width() / qreal(qMax(1, height()));
 
     qreal sx, sy;
     if (srcAspect > dstAspect) {
-      sx = width() / qreal(qMax(1, textSize.width()));
+      sx = width() / qreal(tw);
       sy = sx;
     } else {
-      sy = height() / qreal(qMax(1, textSize.height()));
+      sy = height() / qreal(th);
       sx = sy;
     }
 
     painter.scale(sx, sy);
     painter.drawText(QRectF(0, 0, width() / sx, height() / sy),
-                     Qt::AlignCenter, text);
+                     Qt::AlignCenter | Qt::TextWordWrap, text);
   }
 }
