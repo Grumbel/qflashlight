@@ -1,57 +1,92 @@
-QFlashlight
-===========
+# QFlashlight
 
-QFlashlight is a simple Qt application that will fill the whole screen
-with a solid color. The color can be selected via command line with
-`--color` optional or interactively via the color picker (press 'C').
-Fullscreen can be entered and left with a double click. The mouse
-cursor can be hidden by pressing 'M'.
+Simple Qt application that fills the screen (or a window) with a solid
+color. Optionally displays scaled centered text, either static or the
+live output of a command (watch-like).
 
-The app can also run as a borderless window and blackout only a
-smaller portion of the screen.
+This is a pure **C++ / Qt6** port of the original Python/PyQt5 application.
+All Python has been removed.
 
-Additionally the app can also display a text inside the window. The
-text can either be static or be the output of a program that it
-refreshed at regular intervals, which can be used to get `watch`-like
-functionality, e.g. to display the current date and time use:
+## Features
 
-    qflashlight -C date -n 1
+- Solid background color (CLI or interactive picker)
+- Optional centered, aspect-preserving scaled text
+- Text color and font selection
+- Static text (`-t`), file / stdin, or command output (`-C`) with optional refresh (`-n`)
+- Fullscreen / windowed / borderless
+- Hide mouse cursor
+- Geometry (`WxH+X+Y`)
+- Context menu and keyboard shortcuts
 
+### Keyboard
 
-Usage
------
+| Key | Action              |
+|-----|---------------------|
+| Esc / Q | Quit            |
+| F   | Toggle fullscreen   |
+| M   | Toggle cursor       |
+| B   | Toggle borderless   |
+| C   | Background color    |
+| T   | Text color          |
+| E   | Edit text           |
 
-    usage: qflashlight [-h] [-c COLOR] [-T COLOR] [-F FONT] [-t TEXT] [-C CMD]
-                       [-n SECONDS] [-w] [-m] [-b] [-g WxH+X+Y]
-                       [FILE]
+## Build
 
-    QFlashlight - Fill the screen with a solid color
+### Nix (recommended)
 
-    positional arguments:
-      FILE
+```bash
+nix build
+./result/bin/qflashlight
+```
 
-    optional arguments:
-      -h, --help            show this help message and exit
+Development shell:
 
-    Style:
-      -c COLOR, --color COLOR
-                            Color to use for the background (#FFF, #FFFFFF or
-                            name)
-      -T COLOR, --text-color COLOR
-                            Color to use for text
-      -F FONT, --font FONT  Use FONT to display text
+```bash
+nix develop
+cmake -B build -G Ninja
+cmake --build build
+./build/qflashlight
+```
 
-    Content:
-      -t TEXT, --text TEXT  Display text
-      -C CMD, --command CMD
-                            Runs CMD and shows the output
-      -n SECONDS, --interval SECONDS
-                            Refresh the screen and rerun command every SECONDS
-                            seconds (default: None)
+### CMake + system Qt6
 
-    Window:
-      -w, --window          Start in window mode
-      -m, --hide-cursor     Hide the mouse cursor
-      -b, --borderless      Run the window without a border
-      -g WxH+X+Y, --geometry WxH+X+Y
-                            Set the size and position of the window
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+sudo cmake --install build
+```
+
+## Usage
+
+```
+qflashlight [options] [FILE]
+
+Style:
+  -c, --color COLOR         Background color (default: black)
+  -T, --text-color COLOR    Text color (default: white)
+  -F, --font FONT           Font for text
+
+Content:
+  -t, --text TEXT           Static text
+  -C, --command CMD         Run CMD and show output
+  -n, --interval SECONDS    Refresh interval for -C
+
+Window:
+  -f, --fullscreen          Start fullscreen
+  -w, --window              Start windowed (default)
+  -m, --hide-cursor
+  -b, --borderless
+  -g, --geometry WxH+X+Y
+```
+
+Example (live clock):
+
+```bash
+qflashlight -C date -n 1 -c black -T lime
+```
+
+## License
+
+GPL-3.0-or-later. See [LICENSE.txt](LICENSE.txt).
+
+Copyright (C) 2017–2026 Ingo Ruhnke <grumbel@gmail.com>

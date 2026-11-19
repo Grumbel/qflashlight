@@ -1,8 +1,8 @@
 {
-  description = "An app that fills the whole screen with a color";
+  description = "QFlashlight - Simple Qt-based fullscreen flashlight (C++/Qt6)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -10,101 +10,46 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        pythonPackages = pkgs.python3Packages;
+      in {
+        packages = rec {
+          default = qflashlight;
 
-        PyQt5-stubs = pythonPackages.buildPythonPackage rec {
-          pname = "PyQt5-stubs";
-          version = "5.15.6.0";
-          src = pythonPackages.fetchPypi {
-            inherit pname version;
-            sha256 = "sha256-kScKwj6/OKHcBM2XqoUs0Ir4Lcg5EA5Tla8UR+Pplwc=";
-          };
-        };
-       in rec {
-         packages = rec {
-           default = qflashlight;
+          qflashlight = pkgs.stdenv.mkDerivation rec {
+            pname = "qflashlight";
+            version = "0.3.0";
 
-          qflashlight = pythonPackages.buildPythonPackage rec {
-            name = "qflashlight";
-            src = self;
-
-            pyproject = true;
-            build-system = [ pythonPackages.setuptools ];
-
-            makeWrapperArgs = [
-              "\${qtWrapperArgs[@]}"
-            ];
-
-            preCheck = ''
-              export QT_QPA_PLATFORM_PLUGIN_PATH="${pkgs.qt5.qtbase.bin}/lib/qt-${pkgs.qt5.qtbase.version}/plugins";
-            '';
-
-            doCheck = false;
-            checkPhase = ''
-              runHook preCheck
-              flake8 qflashlight
-              pyright qflashlight
-              mypy qflashlight
-              pylint qflashlight
-              runHook postCheck
-            '';
+            src = ./.;
 
             nativeBuildInputs = with pkgs; [
-              qt5.wrapQtAppsHook
+              cmake
+              qt6.wrapQtAppsHook
             ];
 
-            propagatedBuildInputs = with pythonPackages; [
-              setuptools
-              pyqt5
-              pyxdg
+            buildInputs = with pkgs; [
+              qt6.qtbase
             ];
 
-            nativeCheckInputs = (with pkgs; [
-              pyright
-            ]) ++ (with pythonPackages; [
-              flake8
-              mypy
-              pylint
-              types-setuptools
-            ]) ++ [
-              PyQt5-stubs
-            ];
+            cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
+
+            meta = with pkgs.lib; {
+              description = "Simple Qt-based fullscreen flashlight";
+              homepage = "https://github.com/grumbel/qflashlight";
+              license = licenses.gpl3Plus;
+              platforms = platforms.linux;
+              mainProgram = "qflashlight";
+            };
           };
+        };
 
-          qflashlight-nocheck = qflashlight.override {
-            doCheck = false;
-          };
-         };
+        apps.default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/qflashlight";
+        };
 
-         devShells = rec {
-           qflashlight = pkgs.mkShell {
-             inputsFrom = [ packages.qflashlight ];
-             shellHook = packages.qflashlight.preCheck + ''
-               runHook setuptoolsShellHook
-            '';
-           };
-
-           qflashlight-dev = pkgs.mkShell {
-             inputsFrom = [ packages.qflashlight ];
-             shellHook = packages.qflashlight.preCheck + ''
-               # runHook setuptoolsShellHook
-             '';
-           };
-         };
-
-         apps = rec {
-           default = qflashlight;
-
-           qflashlight = flake-utils.lib.mkApp {
-             drv = packages.qflashlight;
-             exePath = "/bin/qflashlight";
-           };
-
-           qflashlight-nocheck = flake-utils.lib.mkApp {
-             drv = packages.qflashlight-nocheck;
-             exePath = "/bin/qflashlight";
-           };
-         };
-       }
+        devShells.default = pkgs.mkShell {
+          inputsFrom = [ self.packages.${system}.qflashlight ];
+          packages = with pkgs; [ cmake clang-tools gdb ];
+        };
+      }
     );
 }
