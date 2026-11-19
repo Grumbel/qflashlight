@@ -27,4 +27,5 @@ qflashlight.desktop
 - Feature parity with the Python version at the rebase base.
 - Qt6, C++17, CMake, Nix flake.
 - GPLv3+, SPDX headers.
-- Deliver git bundles only; document in TODO.md.
+- Grok Web only: deliver git bundles; document in TODO.md. Other agents
+  (e.g. Claude Code) commit directly.

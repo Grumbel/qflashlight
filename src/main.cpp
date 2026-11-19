@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 {
   QApplication qapp(argc, argv);
   QApplication::setApplicationName("qflashlight");
-  QApplication::setApplicationVersion("0.3.0");
+  QApplication::setApplicationVersion(QStringLiteral(QFLASHLIGHT_VERSION));
   QApplication::setOrganizationName("grumbel");
   QApplication::setDesktopFileName("qflashlight");
 

@@ -10,13 +10,22 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+
+        versionBase = nixpkgs.lib.fileContents ./VERSION;
+        gitRev = "${self.shortRev or self.dirtyShortRev or "dirty"}";
+        isDev = nixpkgs.lib.strings.hasInfix "-dev" versionBase;
+        version =
+          if isDev then
+            "${versionBase}.${toString (self.revCount or 0)}+g${gitRev}"
+          else
+            versionBase;
       in {
         packages = rec {
           default = qflashlight;
 
-          qflashlight = pkgs.stdenv.mkDerivation rec {
+          qflashlight = pkgs.stdenv.mkDerivation {
             pname = "qflashlight";
-            version = "0.3.0";
+            inherit version;
 
             src = ./.;
 
@@ -29,7 +38,10 @@
               qt6.qtbase
             ];
 
-            cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
+            cmakeFlags = [
+              "-DCMAKE_BUILD_TYPE=Release"
+              "-DPROJECT_VERSION_FULL=${version}"
+            ];
 
             meta = with pkgs.lib; {
               description = "Simple Qt-based fullscreen flashlight";
